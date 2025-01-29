@@ -11,6 +11,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@prisma/client": "^6.3.0",
     "eslint-config-prettier": "^10.0.1",
     "next": "15.1.6",
     "react": "^19.0.0",
