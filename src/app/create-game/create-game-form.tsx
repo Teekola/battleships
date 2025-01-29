@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentProps } from "react";
+import { ComponentProps, PropsWithChildren } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusIcon, PlusIcon } from "lucide-react";
@@ -8,17 +8,19 @@ import { FieldValues, Path, useForm, useFormContext } from "react-hook-form";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/ui/form";
+import { Form, FormControl, FormField, FormItem } from "@/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/select";
 
 import {
    CreateGameFormData,
+   ShipType,
+   boardSizeOptions,
    formSchema,
    shipAmountOptionsByShipType,
+   shipSizes,
 } from "./create-game-form-schema";
 
 export function CreateGameForm() {
-   // 1. Define your form.
    const form = useForm<CreateGameFormData>({
       resolver: zodResolver(formSchema),
       defaultValues: {
@@ -31,47 +33,54 @@ export function CreateGameForm() {
       },
    });
 
-   // 2. Define a submit handler.
    function onSubmit(values: CreateGameFormData) {
-      // Do something with the form values.
-      // ✅ This will be type-safe and validated.
       console.log(values);
    }
 
    return (
       <Form {...form}>
-         <form onSubmit={form.handleSubmit(onSubmit)} className="flex max-w-72 flex-col gap-4">
-            <NumberSelectInput<CreateGameFormData>
-               className="mb-8"
-               name="boardSize"
-               label="Board size"
-               options={[5, 6, 7, 8, 9, 10]}
-            />
+         <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex w-full max-w-xs flex-col justify-between gap-4"
+         >
+            <section className="flex flex-col gap-2">
+               <Label>Board Size</Label>
+               <NumberSelectInput<CreateGameFormData>
+                  className="mb-8"
+                  name="boardSize"
+                  options={boardSizeOptions}
+               />
+            </section>
             <section className="flex flex-col gap-2">
                <h2 className="font-bold">Ships</h2>
-               <NumberSelectInput<CreateGameFormData>
+               <ShipAmountInput<CreateGameFormData>
                   name="nCarrier"
                   label="Carriers"
+                  shipType="carrier"
                   options={shipAmountOptionsByShipType.carrier}
                />
-               <NumberSelectInput<CreateGameFormData>
+               <ShipAmountInput<CreateGameFormData>
                   name="nBattleship"
                   label="Battleships"
+                  shipType="battleship"
                   options={shipAmountOptionsByShipType.battleship}
                />
-               <NumberSelectInput<CreateGameFormData>
+               <ShipAmountInput<CreateGameFormData>
                   name="nCruiser"
                   label="Cruisers"
+                  shipType="cruiser"
                   options={shipAmountOptionsByShipType.cruiser}
                />
-               <NumberSelectInput<CreateGameFormData>
+               <ShipAmountInput<CreateGameFormData>
                   name="nSubmarine"
                   label="Submarines"
+                  shipType="submarine"
                   options={shipAmountOptionsByShipType.submarine}
                />
-               <NumberSelectInput<CreateGameFormData>
+               <ShipAmountInput<CreateGameFormData>
                   name="nDestroyer"
                   label="Destroyers"
+                  shipType="destroyer"
                   options={shipAmountOptionsByShipType.destroyer}
                />
             </section>
@@ -82,15 +91,47 @@ export function CreateGameForm() {
    );
 }
 
+interface ShipAmountInputProps<T> extends NumberSelectInputProps<T> {
+   label: string;
+   shipType: ShipType;
+}
+
+function Label({ children, ...props }: Readonly<PropsWithChildren<ComponentProps<"p">>>) {
+   return (
+      <p className={cn("text-sm font-medium", props.className && props.className)}>{children}</p>
+   );
+}
+
+function ShipAmountInput<T extends FieldValues>({
+   name,
+   options,
+   shipType,
+   label,
+   ...props
+}: ShipAmountInputProps<T>) {
+   return (
+      <div className="flex items-center gap-2">
+         <div className="flex w-full flex-wrap items-center gap-2 xs:flex-nowrap">
+            <Label className="w-full">{label}</Label>
+            <div className="flex gap-1">
+               {Array.from({ length: shipSizes[shipType] }).map((_, i) => (
+                  <div key={i} className="h-2 w-2 bg-gray-500"></div>
+               ))}
+            </div>
+         </div>
+         <NumberSelectInput<T> {...props} name={name} options={options} />
+      </div>
+   );
+}
+
 interface NumberSelectInputProps<T> extends ComponentProps<typeof FormItem> {
    name: Path<T>;
-   label: string;
    options: number[];
 }
+
 function NumberSelectInput<T extends FieldValues>({
    name,
    options,
-   label,
    ...props
 }: Readonly<NumberSelectInputProps<T>>) {
    const form = useFormContext<T>();
@@ -101,47 +142,44 @@ function NumberSelectInput<T extends FieldValues>({
          name={name}
          render={({ field }) => (
             <FormItem {...props} className={cn(props.className && props.className)}>
-               <div className="flex items-center gap-2">
-                  <FormLabel className="w-full max-w-28">{label}</FormLabel>
-                  <div className="flex items-center gap-1">
-                     <FormControl>
-                        <Button
-                           size="icon"
-                           variant="outline"
-                           className="min-h-9 min-w-9"
-                           disabled={field.value - 1 < options[0]}
-                           onClick={() => field.onChange(field.value - 1)}
-                        >
-                           <MinusIcon />
-                        </Button>
-                     </FormControl>
-
-                     <Select
-                        onValueChange={(value) => field.onChange(Number(value))}
-                        value={field.value + ""}
+               <div className="flex items-center gap-1">
+                  <FormControl>
+                     <Button
+                        size="icon"
+                        variant="outline"
+                        className="min-h-9 min-w-9"
+                        disabled={field.value - 1 < options[0]}
+                        onClick={() => field.onChange(field.value - 1)}
                      >
-                        <SelectTrigger className="max-w-18 min-w-20">{field.value}</SelectTrigger>
-                        <SelectContent>
-                           {options.map((option) => (
-                              <SelectItem key={option} value={option + ""}>
-                                 {option}
-                              </SelectItem>
-                           ))}
-                        </SelectContent>
-                     </Select>
+                        <MinusIcon />
+                     </Button>
+                  </FormControl>
 
-                     <FormControl>
-                        <Button
-                           className="min-h-9 min-w-9"
-                           variant="outline"
-                           size="icon"
-                           disabled={field.value + 1 > options[options.length - 1]}
-                           onClick={() => field.onChange(field.value + 1)}
-                        >
-                           <PlusIcon />
-                        </Button>
-                     </FormControl>
-                  </div>
+                  <Select
+                     onValueChange={(value) => field.onChange(Number(value))}
+                     value={field.value + ""}
+                  >
+                     <SelectTrigger className="max-w-18 min-w-20">{field.value}</SelectTrigger>
+                     <SelectContent>
+                        {options.map((option) => (
+                           <SelectItem key={option} value={option + ""}>
+                              {option}
+                           </SelectItem>
+                        ))}
+                     </SelectContent>
+                  </Select>
+
+                  <FormControl>
+                     <Button
+                        className="min-h-9 min-w-9"
+                        variant="outline"
+                        size="icon"
+                        disabled={field.value + 1 > options[options.length - 1]}
+                        onClick={() => field.onChange(field.value + 1)}
+                     >
+                        <PlusIcon />
+                     </Button>
+                  </FormControl>
                </div>
             </FormItem>
          )}

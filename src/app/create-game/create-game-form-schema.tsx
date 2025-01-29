@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 
-const shipSizes = {
+export const shipSizes = {
    carrier: 5,
    battleship: 4,
    cruiser: 3,
@@ -10,8 +10,10 @@ const shipSizes = {
    destroyer: 2,
 };
 
+export const boardSizeOptions = [5, 6, 7, 8, 9, 10];
+
 type ShipToShipNumber = typeof shipSizes;
-type ShipType = keyof typeof shipSizes;
+export type ShipType = keyof typeof shipSizes;
 
 export const shipLimits = {
    carrier: { min: 0, max: 2 },

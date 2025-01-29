@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
    return (
-      <div className="mx-auto flex h-full max-w-screen-xs flex-col justify-center">
+      <div className="mx-auto flex h-full max-w-screen-xs flex-col justify-center p-4">
          <div className="flex flex-col">
             <header className="mb-4">
                <h1 className="text-3xl font-bold">Teekola&apos;s Battleships</h1>
