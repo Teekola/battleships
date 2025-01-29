@@ -1,6 +1,6 @@
 import { BackButtonLink } from "@/components/ui/back-button-link";
 
-export default function Page() {
+export default function CreateGamePage() {
    return (
       <div>
          <BackButtonLink href="/" label="Back" />
