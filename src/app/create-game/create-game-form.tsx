@@ -2,6 +2,8 @@
 
 import { ComponentProps, PropsWithChildren } from "react";
 
+import { useRouter } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { FieldValues, Path, useForm, useFormContext } from "react-hook-form";
@@ -19,8 +21,10 @@ import {
    shipAmountOptionsByShipType,
    shipSizes,
 } from "./create-game-form-schema";
+import { generateGameId } from "./generate-game-id";
 
 export function CreateGameForm() {
+   const router = useRouter();
    const form = useForm<CreateGameFormData>({
       resolver: zodResolver(formSchema),
       defaultValues: {
@@ -35,6 +39,8 @@ export function CreateGameForm() {
 
    function onSubmit(values: CreateGameFormData) {
       console.log(values);
+      const gameId = generateGameId();
+      router.push(`/game/${gameId}/join`);
    }
 
    return (
