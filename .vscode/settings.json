@@ -1,0 +1,14 @@
+{
+   "editor.formatOnPaste": true,
+   "editor.formatOnSave": true,
+   "editor.defaultFormatter": "esbenp.prettier-vscode",
+   "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "never"
+   },
+   "editor.insertSpaces": true,
+   "editor.tabSize": 3,
+   "editor.detectIndentation": false,
+   "[prisma]": {
+      "editor.defaultFormatter": "Prisma.prisma"
+   },
+}
