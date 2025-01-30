@@ -20,8 +20,9 @@ export function PlayerNameForm({ gameId }: Readonly<{ gameId: string }>) {
       },
    });
 
-   function onSubmit(values: PlayerNameFormData) {
-      console.log(values);
+   function onSubmit(data: PlayerNameFormData) {
+      console.log(data);
+      // TODO: Check if there is already a player, if so, go directly to the game start stage!
       router.push(`/game/${gameId}/invite`);
    }
 

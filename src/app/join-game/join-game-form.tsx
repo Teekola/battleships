@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { useRouter } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
@@ -20,6 +22,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/ui/input-otp";
 import { JoinGameFormData, formSchema } from "./join-game-form-schema";
 
 export function JoinGameForm() {
+   const router = useRouter();
    const form = useForm<JoinGameFormData>({
       resolver: zodResolver(formSchema),
       defaultValues: {
@@ -32,8 +35,10 @@ export function JoinGameForm() {
       form.setFocus("gameId");
    }, [form]);
 
-   function onSubmit(values: JoinGameFormData) {
-      console.log(values);
+   function onSubmit(data: JoinGameFormData) {
+      console.log(data);
+      // TODO: Check if the gameId is valid and free to join
+      router.push(`/game/${data.gameId}/join`);
    }
 
    const canProceed = form.formState.isValid;
