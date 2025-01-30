@@ -16,6 +16,7 @@ import {
    useSensors,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import throttle from "lodash.throttle";
 
 import { cn } from "@/lib/utils";
 
@@ -109,6 +110,8 @@ export default function GamePage() {
       canPlace: false,
       coordinates: [],
    });
+   const [isDragging, setIsDragging] = useState(false);
+
    const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
 
    // Update grid size
@@ -123,9 +126,21 @@ export default function GamePage() {
 
    function handleDragStart(e: DragStartEvent) {
       setDraggingId(e.active.id + "");
+      setIsDragging(true);
    }
 
+   function handleDragAbort() {
+      setHoveredCells(emptyHoveredCells);
+      setDraggingId(null);
+   }
+
+   function handleDragCancel() {
+      setHoveredCells(emptyHoveredCells);
+      setDraggingId(null);
+   }
    function handleDragEnd(e: DragEndEvent) {
+      setIsDragging(false);
+      console.log("END");
       setDraggingId(null);
 
       if (!hoveredCells.canPlace || !e.over) {
@@ -163,6 +178,7 @@ export default function GamePage() {
    }
 
    function handleDragMove(e: DragMoveEvent) {
+      if (!isDragging) return;
       const currentOver = e.over;
 
       if (!currentOver) {
@@ -223,8 +239,15 @@ export default function GamePage() {
       if (hoveredCells.length !== size) {
          canPlace = false;
       }
+      if (!draggingId) {
+         setHoveredCells(emptyHoveredCells);
+         return;
+      }
       setHoveredCells({ canPlace, coordinates: hoveredCells });
+      console.log("MOVE");
    }
+
+   const handleThrottledMove = throttle(handleDragMove, 100);
 
    return (
       <div className="h-full">
@@ -233,7 +256,9 @@ export default function GamePage() {
             sensors={sensors}
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
+            onDragMove={handleThrottledMove}
+            onDragAbort={handleDragAbort}
+            onDragCancel={handleDragCancel}
          >
             <GameBoard
                size={gameBoardSize}
@@ -327,7 +352,7 @@ function DroppableCell({
       isShip?: boolean;
    }>
 >) {
-   const { isOver, setNodeRef } = useDroppable({
+   const { setNodeRef } = useDroppable({
       id: coordinates.x + "-" + coordinates.y,
    });
 
@@ -337,8 +362,8 @@ function DroppableCell({
          ref={setNodeRef}
          className={cn(
             "group flex h-full w-full cursor-pointer items-center justify-center",
-            (isOver || isShipOver) && canPlace && "bg-blue-200",
-            (isOver || isShipOver) && !canPlace && "bg-red-300"
+            isShipOver && canPlace && "bg-blue-200",
+            isShipOver && !canPlace && "bg-red-300"
          )}
       >
          {isShip && children}
