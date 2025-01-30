@@ -1,6 +1,6 @@
 "use client";
 
-import { PropsWithChildren, useEffect, useId, useState } from "react";
+import { PropsWithChildren, useEffect, useId, useMemo, useState } from "react";
 
 import {
    DndContext,
@@ -177,77 +177,99 @@ export default function GamePage() {
       setHoveredCells(emptyHoveredCells);
    }
 
-   function handleDragMove(e: DragMoveEvent) {
-      if (!isDragging) return;
-      const currentOver = e.over;
+   const handleDragMove = useMemo(() => {
+      return throttle(
+         (e: DragMoveEvent) => {
+            if (!isDragging) return;
+            const currentOver = e.over;
 
-      if (!currentOver) {
-         setHoveredCells(emptyHoveredCells);
-         return;
-      }
-
-      // get current coordinates from the droppable id
-      const [x, y] = String(currentOver.id)
-         .split("-")
-         .map((s) => Number(s));
-
-      // Get size and orientation from the droppable data
-      const data = e.active.data.current;
-      const size = data?.size as number;
-      const orientation = data?.orientation as string;
-
-      // Calculate the hovered cells
-      const hoveredCells: HoveredCell[] = [];
-
-      let canPlace = true;
-
-      // Check for horizontal placement
-      if (orientation === "horizontal") {
-         for (let i = 0; i < size; i++) {
-            if (x + i >= gameBoardSize) {
-               break;
+            if (!currentOver) {
+               setHoveredCells(emptyHoveredCells);
+               return;
             }
 
-            // Check if this cell is occupied by any ship part
-            const isOccupied = allShipsCoordinates.has(`${x + i},${y}`);
+            // Get current coordinates from the droppable id
+            const [x, y] = String(currentOver.id)
+               .split("-")
+               .map((s) => Number(s));
 
-            if (isOccupied) {
+            // Get size and orientation from the droppable data
+            const data = e.active.data.current;
+            const size = data?.size as number;
+            const orientation = data?.orientation as string;
+
+            // Calculate the hovered cells
+            const hoveredCells: HoveredCell[] = [];
+            let canPlace = true;
+
+            // Check for horizontal placement
+            if (orientation === "horizontal") {
+               for (let i = 0; i < size; i++) {
+                  if (x + i >= gameBoardSize) {
+                     break;
+                  }
+
+                  // Check if this cell is occupied by any ship part
+                  const isOccupied = allShipsCoordinates.has(`${x + i},${y}`);
+
+                  if (isOccupied) {
+                     canPlace = false;
+                  }
+
+                  hoveredCells.push({ x: x + i, y, isOccupied });
+               }
+            }
+
+            // Check for vertical placement
+            if (orientation === "vertical") {
+               for (let i = 0; i < size; i++) {
+                  if (y + i >= gameBoardSize) {
+                     break;
+                  }
+
+                  const isOccupied = allShipsCoordinates.has(`${x},${y + i}`);
+
+                  if (isOccupied) {
+                     canPlace = false;
+                  }
+
+                  hoveredCells.push({ x, y: y + i, isOccupied });
+               }
+            }
+
+            if (hoveredCells.length !== size) {
                canPlace = false;
             }
-
-            hoveredCells.push({ x: x + i, y, isOccupied });
-         }
-      }
-
-      // Check for vertical placement
-      if (orientation === "vertical") {
-         for (let i = 0; i < size; i++) {
-            if (y + i >= gameBoardSize) {
-               break;
+            if (!draggingId) {
+               setHoveredCells(emptyHoveredCells);
+               return;
             }
+            setHoveredCells({ canPlace, coordinates: hoveredCells });
+            console.log("MOVE");
+         },
+         100,
+         { leading: true, trailing: true } // Ensures the last call is fired
+      );
+   }, [allShipsCoordinates, draggingId, isDragging]);
 
-            const isOccupied = allShipsCoordinates.has(`${x},${y + i}`);
-
-            if (isOccupied) {
-               canPlace = false;
-            }
-
-            hoveredCells.push({ x, y: y + i, isOccupied });
-         }
+   useEffect(() => {
+      return () => {
+         handleDragMove.cancel(); // Cancel pending throttled calls on unmount
+      };
+   }, [handleDragMove]);
+   // Ensure that if the move is fired after releasing, the selection is cleared
+   useEffect(() => {
+      let timeout: NodeJS.Timeout;
+      if (!isDragging) {
+         timeout = setTimeout(() => {
+            console.log("REMOVE");
+            setHoveredCells(emptyHoveredCells);
+         }, 100);
       }
-
-      if (hoveredCells.length !== size) {
-         canPlace = false;
-      }
-      if (!draggingId) {
-         setHoveredCells(emptyHoveredCells);
-         return;
-      }
-      setHoveredCells({ canPlace, coordinates: hoveredCells });
-      console.log("MOVE");
-   }
-
-   const handleThrottledMove = throttle(handleDragMove, 100);
+      return () => {
+         clearTimeout(timeout);
+      };
+   }, [isDragging]);
 
    return (
       <div className="h-full">
@@ -256,7 +278,7 @@ export default function GamePage() {
             sensors={sensors}
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
-            onDragMove={handleThrottledMove}
+            onDragMove={handleDragMove}
             onDragAbort={handleDragAbort}
             onDragCancel={handleDragCancel}
          >
