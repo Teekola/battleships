@@ -151,6 +151,7 @@ function NumberSelectInput<T extends FieldValues>({
                <div className="flex items-center gap-1">
                   <FormControl>
                      <Button
+                        type="button"
                         size="icon"
                         variant="outline"
                         className="min-h-9 min-w-9"
@@ -177,6 +178,7 @@ function NumberSelectInput<T extends FieldValues>({
 
                   <FormControl>
                      <Button
+                        type="button"
                         className="min-h-9 min-w-9"
                         variant="outline"
                         size="icon"
