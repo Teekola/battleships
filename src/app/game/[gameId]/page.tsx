@@ -19,36 +19,97 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { cn } from "@/lib/utils";
 
+interface Coordinates {
+   x: number;
+   y: number;
+}
+type ShipPieceType = "start" | "mid" | "end";
+type ShipOrientation = "horizontal" | "vertical";
+
+type BoardWithShips = BoardCell[][];
+type BoardCell =
+   | {
+        x: number;
+        y: number;
+        isShip: true;
+        shipOrientation: ShipOrientation;
+        shipPiece: ShipPieceType;
+     }
+   | { x: number; y: number; isShip: false };
+
 type HoveredCells = {
    canPlace: boolean;
-   coordinates: Coordinates[];
+   coordinates: HoveredCell[];
 };
+
+interface HoveredCell extends Coordinates {
+   isOccupied: boolean;
+}
+
+type PlacedShips = {
+   coordinates: Coordinates;
+   size: number;
+   orientation: ShipOrientation;
+}[];
 
 const emptyHoveredCells: HoveredCells = {
    canPlace: false,
    coordinates: [],
 };
 
-type ShipOrientation = "horizontal" | "vertical";
-type PlacedShips = {
-   coordinates: Coordinates;
-   ship: { size: number; orientation: ShipOrientation };
-}[];
+function generateGameBoard(size: number): BoardWithShips {
+   const board: BoardWithShips = [];
+   for (let y = 0; y < size; y++) {
+      const row: BoardCell[] = [];
+      for (let x = 0; x < size; x++) {
+         row.push({ x, y, isShip: false });
+      }
+      board.push(row);
+   }
+   return board;
+}
+
+function placeShipsOnGameBoard(ships: PlacedShips, board: BoardWithShips) {
+   ships.forEach(({ coordinates, orientation, size }) => {
+      const { x, y } = coordinates;
+      for (let i = 0; i < size; i++) {
+         const isStart = i === 0;
+         const isEnd = i === size - 1;
+         const shipPiece = isStart ? "start" : isEnd ? "end" : "mid";
+
+         if (orientation === "horizontal") {
+            board[y][x + i] = {
+               x: x + i,
+               y,
+               isShip: true,
+               shipOrientation: orientation,
+               shipPiece,
+            };
+         } else {
+            board[y + i][x] = {
+               x,
+               y: y + i,
+               isShip: true,
+               shipOrientation: orientation,
+               shipPiece,
+            };
+         }
+      }
+   });
+}
 
 export default function GamePage() {
    const id = useId();
-   const pointerSensor = useSensor(PointerSensor);
-
-   const keyboardSensor = useSensor(KeyboardSensor);
-   const gameBoardSize = 5;
+   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
+   const gameBoardSize = 10;
    const [gridSize, setGridSize] = useState<number>(0);
    const [draggingId, setDraggingId] = useState<string | null>(null);
    const [placedShips, setPlacedShips] = useState<PlacedShips>([]);
-
    const [hoveredCells, setHoveredCells] = useState<HoveredCells>({
       canPlace: false,
       coordinates: [],
    });
+   const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
 
    // Update grid size
    useEffect(() => {
@@ -66,6 +127,7 @@ export default function GamePage() {
 
    function handleDragEnd(e: DragEndEvent) {
       setDraggingId(null);
+
       if (!hoveredCells.canPlace || !e.over) {
          setHoveredCells(emptyHoveredCells);
          return;
@@ -80,8 +142,23 @@ export default function GamePage() {
          .map((s) => Number(s));
 
       const coordinates = { x, y };
-      const ship = { size, orientation };
-      setPlacedShips((prev) => prev.concat([{ coordinates, ship }]));
+
+      const newPlacedShips = placedShips.concat([{ coordinates, size, orientation }]);
+
+      const newAllShipsCoordinates = new Set<string>();
+      for (const { orientation, size, coordinates } of newPlacedShips) {
+         if (orientation === "horizontal") {
+            for (let i = 0; i < size; i++) {
+               newAllShipsCoordinates.add(`${coordinates.x + i},${coordinates.y}`);
+            }
+         } else if (orientation === "vertical") {
+            for (let i = 0; i < size; i++) {
+               newAllShipsCoordinates.add(`${coordinates.x},${coordinates.y + i}`);
+            }
+         }
+      }
+      setPlacedShips(newPlacedShips);
+      setAllShipsCoordinates(newAllShipsCoordinates);
       setHoveredCells(emptyHoveredCells);
    }
 
@@ -104,57 +181,51 @@ export default function GamePage() {
       const orientation = data?.orientation as string;
 
       // Calculate the hovered cells
-      const hoveredCells: Coordinates[] = [];
+      const hoveredCells: HoveredCell[] = [];
+
+      let canPlace = true;
+
+      // Check for horizontal placement
       if (orientation === "horizontal") {
          for (let i = 0; i < size; i++) {
-            if (x + i > gameBoardSize - 1) {
+            if (x + i >= gameBoardSize) {
                break;
             }
-            hoveredCells.push({ x: x + i, y });
+
+            // Check if this cell is occupied by any ship part
+            const isOccupied = allShipsCoordinates.has(`${x + i},${y}`);
+
+            if (isOccupied) {
+               canPlace = false;
+            }
+
+            hoveredCells.push({ x: x + i, y, isOccupied });
          }
       }
 
+      // Check for vertical placement
       if (orientation === "vertical") {
          for (let i = 0; i < size; i++) {
-            if (y + i > gameBoardSize - 1) {
+            if (y + i >= gameBoardSize) {
                break;
             }
-            hoveredCells.push({ x, y: y + i });
-         }
-      }
 
-      // Can place
-      let canPlace = true;
-      for (const { ship, coordinates } of placedShips) {
-         const { orientation, size } = ship;
-         const allCoordinates = [{ ...coordinates }];
+            const isOccupied = allShipsCoordinates.has(`${x},${y + i}`);
 
-         if (orientation === "horizontal") {
-            for (let i = 1; i < size; i++) {
-               allCoordinates.push({ x: coordinates.x + i, y: coordinates.y });
+            if (isOccupied) {
+               canPlace = false;
             }
-         } else if (orientation === "vertical") {
-            for (let i = 1; i < size; i++) {
-               allCoordinates.push({ x: coordinates.x, y: coordinates.y + i });
-            }
-         }
 
-         canPlace = !allCoordinates.some((coord) =>
-            hoveredCells.some((hovered) => hovered.x === coord.x && hovered.y === coord.y)
-         );
+            hoveredCells.push({ x, y: y + i, isOccupied });
+         }
       }
 
       if (hoveredCells.length !== size) {
          canPlace = false;
       }
       setHoveredCells({ canPlace, coordinates: hoveredCells });
-
-      if (gridSize !== currentOver.rect.width) {
-         setGridSize(currentOver.rect.width);
-      }
    }
 
-   const sensors = useSensors(pointerSensor, keyboardSensor);
    return (
       <div className="h-full">
          <DndContext
@@ -195,36 +266,6 @@ export default function GamePage() {
    );
 }
 
-interface Coordinates {
-   x: number;
-   y: number;
-}
-
-function generateGameBoard(size: number): BoardWithShips {
-   const board: BoardWithShips = [];
-   for (let y = 0; y < size; y++) {
-      const row: BoardCell[] = [];
-      for (let x = 0; x < size; x++) {
-         row.push({ x, y, isShip: false });
-      }
-      board.push(row);
-   }
-   return board;
-}
-
-type BoardWithShips = BoardCell[][];
-type ShipPieceType = "start" | "mid" | "end";
-
-type BoardCell =
-   | {
-        x: number;
-        y: number;
-        isShip: true;
-        shipOrientation: ShipOrientation;
-        shipPiece: ShipPieceType;
-     }
-   | { x: number; y: number; isShip: false };
-
 function GameBoard({
    size,
    cellSize,
@@ -237,35 +278,7 @@ function GameBoard({
    cellSize: number;
 }>) {
    const board = generateGameBoard(size);
-
-   placedShips.forEach(({ coordinates, ship }) => {
-      const { x, y } = coordinates;
-      const { size, orientation } = ship;
-
-      for (let i = 0; i < size; i++) {
-         const isStart = i === 0;
-         const isEnd = i === size - 1;
-         const shipPiece = isStart ? "start" : isEnd ? "end" : "mid";
-
-         if (orientation === "horizontal") {
-            board[y][x + i] = {
-               x: x + i,
-               y,
-               isShip: true,
-               shipOrientation: orientation,
-               shipPiece,
-            };
-         } else {
-            board[y + i][x] = {
-               x,
-               y: y + i,
-               isShip: true,
-               shipOrientation: orientation,
-               shipPiece,
-            };
-         }
-      }
-   });
+   placeShipsOnGameBoard(placedShips, board);
 
    return (
       <div className="max-h-lg aspect-square max-w-lg">
