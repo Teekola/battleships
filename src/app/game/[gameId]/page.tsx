@@ -1,9 +1,9 @@
 "use client";
 
 import {
-   ComponentProps,
    Fragment,
    PropsWithChildren,
+   useCallback,
    useEffect,
    useId,
    useMemo,
@@ -18,26 +18,26 @@ import {
    DragStartEvent,
    KeyboardSensor,
    PointerSensor,
-   useDraggable,
    useDroppable,
    useSensor,
    useSensors,
 } from "@dnd-kit/core";
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
-import { CSS } from "@dnd-kit/utilities";
-import debounce from "lodash.debounce";
 import throttle from "lodash.throttle";
 
 import { ShipType, shipSizes } from "@/app/create-game/create-game-form-schema";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface Coordinates {
+import { DraggableShip } from "./(components)/draggable-ship";
+import { ShipCatalogue } from "./(components)/ship-catalogue";
+
+export interface Coordinates {
    x: number;
    y: number;
 }
-type ShipPieceType = "start" | "mid" | "end";
-type ShipOrientation = "horizontal" | "vertical";
+export type ShipPieceType = "start" | "mid" | "end";
+export type ShipOrientation = "horizontal" | "vertical";
 
 type BoardWithShips = BoardCell[][];
 type BoardCell =
@@ -61,20 +61,15 @@ interface HoveredCell extends Coordinates {
    isOccupied: boolean;
 }
 
-type PlacedShips = {
+type PlacedShip = {
    id: string;
    shipType: ShipType;
    coordinates: Coordinates;
    size: number;
    orientation: ShipOrientation;
-}[];
-
-const emptyHoveredCells: HoveredCells = {
-   canPlace: false,
-   coordinates: [],
 };
 
-// TODO: MAKE PLACED SHIPS DRAGGABLE CORRECTLY!
+export type ShipAmounts = typeof shipSizes;
 
 function generateGameBoard(size: number): BoardWithShips {
    const board: BoardWithShips = [];
@@ -88,7 +83,7 @@ function generateGameBoard(size: number): BoardWithShips {
    return board;
 }
 
-function placeShipsOnGameBoard(ships: PlacedShips, board: BoardWithShips) {
+function placeShipsOnGameBoard(ships: PlacedShip[], board: BoardWithShips) {
    ships.forEach(({ coordinates, orientation, size, id }) => {
       const { x, y } = coordinates;
       for (let i = 0; i < size; i++) {
@@ -121,7 +116,7 @@ function placeShipsOnGameBoard(ships: PlacedShips, board: BoardWithShips) {
    });
 }
 
-function getAllShipsCoordinates({ placedShips }: { placedShips: PlacedShips }) {
+function getAllShipsCoordinates({ placedShips }: { placedShips: PlacedShip[] }) {
    const newAllShipsCoordinates = new Set<string>();
    for (const { orientation, size, coordinates } of placedShips) {
       if (orientation === "horizontal") {
@@ -137,7 +132,44 @@ function getAllShipsCoordinates({ placedShips }: { placedShips: PlacedShips }) {
    return newAllShipsCoordinates;
 }
 
-type ShipAmounts = typeof shipSizes;
+const useCellSize = (gameBoardSize: number) => {
+   const [cellSize, setCellSize] = useState<number>(gameBoardSize * 16);
+
+   useEffect(() => {
+      const updateCellSize = throttle(() => {
+         const dataCell = document.querySelector('[data-cell="true"]');
+         if (dataCell) {
+            setCellSize(dataCell.getClientRects()[0].width);
+         }
+      }, 300);
+
+      updateCellSize();
+      window.addEventListener("resize", updateCellSize);
+
+      return () => window.removeEventListener("resize", updateCellSize);
+   }, [gameBoardSize]);
+
+   return cellSize;
+};
+
+function useClearSelectionOnRelease({
+   draggingId,
+   resetHoveredCells,
+}: Readonly<{ draggingId: string | null; resetHoveredCells: () => void }>) {
+   useEffect(() => {
+      let timeout: NodeJS.Timeout;
+      if (!draggingId) {
+         timeout = setTimeout(() => {
+            console.log("REMOVE");
+            resetHoveredCells();
+         }, 100);
+      }
+
+      return () => {
+         clearTimeout(timeout);
+      };
+   }, [draggingId, resetHoveredCells]);
+}
 
 export default function GamePage() {
    const shipAmounts = {
@@ -148,202 +180,168 @@ export default function GamePage() {
       destroyer: 2,
    };
    const gameBoardSize = 6;
+   const cellSize = useCellSize(gameBoardSize);
    const id = useId();
    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
-   const [cellSize, setCellSize] = useState<number>(0);
    const [draggingId, setDraggingId] = useState<string | null>(null);
-   const [placedShips, setPlacedShips] = useState<PlacedShips>([]);
+   const [placedShips, setPlacedShips] = useState<PlacedShip[]>([]);
    const [hoveredCells, setHoveredCells] = useState<HoveredCells>({
       canPlace: false,
       coordinates: [],
    });
-   const [isDragging, setIsDragging] = useState(false);
+
    const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
 
    const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(shipAmounts);
    const [orientation, setOrientation] = useState<ShipOrientation>("vertical");
 
-   useEffect(() => {
-      function updateCellSize() {
-         const dataCell = document.querySelector('[data-cell="true"]');
-         if (!dataCell) return;
-         const size = dataCell.getClientRects()[0].width;
-         setCellSize(size);
-      }
-      updateCellSize();
-
-      const debouncedUpdateCellSize = debounce(updateCellSize, 200);
-
-      window.addEventListener("resize", debouncedUpdateCellSize);
-
-      return () => {
-         window.removeEventListener("resize", debouncedUpdateCellSize);
+   useClearSelectionOnRelease({ draggingId, resetHoveredCells });
+   function removePlacedShip(ship: PlacedShip) {
+      const newPlacedShips = placedShips.filter((ps) => ps.id !== ship.id);
+      const newShipsToPlace = {
+         ...shipsToPlace,
+         [ship.shipType]: shipsToPlace[ship.shipType] + 1,
       };
-   }, [gameBoardSize]);
+      setShipsToPlace(newShipsToPlace);
+      setPlacedShips(newPlacedShips);
+      updateAllShipsCoordinates();
+   }
+
+   function resetHoveredCells() {
+      setHoveredCells({ canPlace: false, coordinates: [] });
+   }
 
    function handleDragStart(e: DragStartEvent) {
       const shipId = String(e.active.id);
       setDraggingId(shipId);
 
-      // If the ship is in placed ships,
-      // 1) remove it from placed ships
-      // 2) reset allships coordinates
-      // 3) update orientation to match its placement
+      // Handle dragging a placed ship
       const placedShip = placedShips.find((ship) => ship.id === shipId);
       if (placedShip) {
-         const newPlacedShips = placedShips.filter((ps) => ps.id !== shipId);
-         const newShipsToPlace = {
-            ...shipsToPlace,
-            [placedShip.shipType]: shipsToPlace[placedShip.shipType] + 1,
-         };
-         setShipsToPlace(newShipsToPlace);
+         removePlacedShip(placedShip);
          setOrientation(placedShip.orientation);
-         setPlacedShips(newPlacedShips);
-         const newAllShipsCoordinates = getAllShipsCoordinates({ placedShips: newPlacedShips });
-         setAllShipsCoordinates(newAllShipsCoordinates);
       }
-
-      setIsDragging(true);
    }
 
    function handleDragAbort() {
-      setHoveredCells(emptyHoveredCells);
+      resetHoveredCells();
       setDraggingId(null);
    }
 
    function handleDragCancel() {
-      setHoveredCells(emptyHoveredCells);
+      resetHoveredCells();
       setDraggingId(null);
    }
+
+   function placeShip({
+      id,
+      size,
+      orientation,
+      coordinates,
+   }: {
+      id: string;
+      size: number;
+      orientation: ShipOrientation;
+      coordinates: Coordinates;
+   }) {
+      const shipType = id.split("-")[0] as ShipType;
+      const newPlacedShips = placedShips.concat([{ coordinates, size, orientation, id, shipType }]);
+      setPlacedShips(newPlacedShips);
+      updateAllShipsCoordinates();
+      const newShipsToPlace = { ...shipsToPlace, [shipType]: shipsToPlace[shipType] - 1 };
+      setShipsToPlace(newShipsToPlace);
+      resetHoveredCells();
+   }
+
    function handleDragEnd(e: DragEndEvent) {
-      setIsDragging(false);
-      console.log("END");
       setDraggingId(null);
 
       if (!hoveredCells.canPlace || !e.over) {
-         setHoveredCells(emptyHoveredCells);
+         resetHoveredCells();
          return;
       }
 
-      const shipId = String(e.active.id);
-      const shipType = shipId.split("-")[0] as ShipType;
-      const data = e.active.data.current;
-      const size = data?.size as number;
-      const orientation = data?.orientation as ShipOrientation;
+      const { size, orientation } = e.active.data.current as {
+         size: number;
+         orientation: ShipOrientation;
+      };
+      const [x, y] = String(e.over.id).split("-").map(Number);
 
-      const [x, y] = String(e.over.id)
-         .split("-")
-         .map((s) => Number(s));
-
-      const coordinates = { x, y };
-
-      const newPlacedShips = placedShips.concat([
-         { coordinates, size, orientation, id: shipId, shipType },
-      ]);
-
-      const newAllShipsCoordinates = getAllShipsCoordinates({ placedShips: newPlacedShips });
-
-      const newShipsToPlace = { ...shipsToPlace, [shipType]: shipsToPlace[shipType] - 1 };
-      setShipsToPlace(newShipsToPlace);
-      setPlacedShips(newPlacedShips);
-      setAllShipsCoordinates(newAllShipsCoordinates);
-      setHoveredCells(emptyHoveredCells);
+      placeShip({ id: String(e.active.id), size, orientation, coordinates: { x, y } });
    }
+
+   const highlightPlacement = useCallback(
+      ({
+         x,
+         y,
+         size,
+         orientation,
+      }: {
+         x: number;
+         y: number;
+         size: number;
+         orientation: ShipOrientation;
+      }) => {
+         const hoveredCells: HoveredCell[] = [];
+         let canPlace = true;
+
+         const isHorizontal = orientation === "horizontal";
+
+         // Loop through the size of the ship in the correct direction
+         for (let i = 0; i < size; i++) {
+            const currentX = isHorizontal ? x + i : x;
+            const currentY = isHorizontal ? y : y + i;
+
+            // Check if the cell is already occupied by another ship
+            const isOccupied = allShipsCoordinates.has(`${currentX},${currentY}`);
+            if (isOccupied) {
+               canPlace = false;
+            }
+
+            hoveredCells.push({ x: currentX, y: currentY, isOccupied });
+         }
+
+         if (hoveredCells.length !== size) {
+            canPlace = false;
+         }
+
+         if (!draggingId) {
+            return resetHoveredCells();
+         }
+
+         setHoveredCells({ canPlace, coordinates: hoveredCells });
+      },
+      [allShipsCoordinates, draggingId]
+   );
 
    const handleDragMove = useMemo(() => {
       return throttle(
          (e: DragMoveEvent) => {
-            if (!isDragging) return;
-            const currentOver = e.over;
-
-            if (!currentOver) {
-               setHoveredCells(emptyHoveredCells);
-               return;
+            if (!draggingId) return;
+            const { id } = e.over ?? {};
+            if (!id) {
+               return resetHoveredCells();
             }
-
             // Get current coordinates from the droppable id
-            const [x, y] = String(currentOver.id)
-               .split("-")
-               .map((s) => Number(s));
+            const [x, y] = String(id).split("-").map(Number);
 
             // Get size and orientation from the droppable data
-            const data = e.active.data.current;
-            const size = data?.size as number;
-            const orientation = data?.orientation as string;
-
-            // Calculate the hovered cells
-            const hoveredCells: HoveredCell[] = [];
-            let canPlace = true;
-
-            // Check for horizontal placement
-            if (orientation === "horizontal") {
-               for (let i = 0; i < size; i++) {
-                  if (x + i >= gameBoardSize) {
-                     break;
-                  }
-
-                  // Check if this cell is occupied by any ship part
-                  const isOccupied = allShipsCoordinates.has(`${x + i},${y}`);
-
-                  if (isOccupied) {
-                     canPlace = false;
-                  }
-
-                  hoveredCells.push({ x: x + i, y, isOccupied });
-               }
-            }
-
-            // Check for vertical placement
-            if (orientation === "vertical") {
-               for (let i = 0; i < size; i++) {
-                  if (y + i >= gameBoardSize) {
-                     break;
-                  }
-
-                  const isOccupied = allShipsCoordinates.has(`${x},${y + i}`);
-
-                  if (isOccupied) {
-                     canPlace = false;
-                  }
-
-                  hoveredCells.push({ x, y: y + i, isOccupied });
-               }
-            }
-
-            if (hoveredCells.length !== size) {
-               canPlace = false;
-            }
-            if (!draggingId) {
-               setHoveredCells(emptyHoveredCells);
-               return;
-            }
-            setHoveredCells({ canPlace, coordinates: hoveredCells });
-            console.log("MOVE");
+            const { size, orientation } = e.active.data.current as {
+               size: number;
+               orientation: ShipOrientation;
+            };
+            highlightPlacement({ x, y, size, orientation });
          },
          100,
          { leading: true, trailing: true }
       );
-   }, [allShipsCoordinates, draggingId, isDragging]);
+   }, [draggingId, highlightPlacement]);
 
-   useEffect(() => {
-      return () => {
-         handleDragMove.cancel();
-      };
-   }, [handleDragMove]);
+   useEffect(() => () => handleDragMove.cancel(), [handleDragMove]);
 
-   // Ensure that if the move is fired after releasing, the selection is cleared
-   useEffect(() => {
-      let timeout: NodeJS.Timeout;
-      if (!isDragging) {
-         timeout = setTimeout(() => {
-            console.log("REMOVE");
-            setHoveredCells(emptyHoveredCells);
-         }, 100);
-      }
-      return () => {
-         clearTimeout(timeout);
-      };
-   }, [isDragging]);
+   function updateAllShipsCoordinates() {
+      setAllShipsCoordinates(getAllShipsCoordinates({ placedShips }));
+   }
 
    return (
       <div className="h-full">
@@ -379,12 +377,11 @@ export default function GamePage() {
                draggingId={draggingId}
             />
 
-            <DragOverlay dropAnimation={{ duration: 0 }}>
+            <DragOverlay dropAnimation={null}>
                {(Object.keys(shipsToPlace) as ShipType[]).map((shipType) => (
                   <Fragment key={shipType}>
                      {draggingId?.startsWith(shipType) && (
                         <Ship
-                           boardSize={gameBoardSize}
                            size={shipSizes[shipType]}
                            orientation={orientation}
                            cellSize={cellSize}
@@ -406,7 +403,7 @@ function GameBoard({
 }: Readonly<{
    size: number;
    hoveredCells: HoveredCells;
-   placedShips: PlacedShips;
+   placedShips: PlacedShip[];
    cellSize: number;
 }>) {
    const board = generateGameBoard(size);
@@ -419,7 +416,6 @@ function GameBoard({
             style={{
                gridTemplateColumns: `repeat(${size}, 1fr)`,
                gridTemplateRows: `repeat(${size}, 1fr)`,
-               gap: 14 - size,
             }}
          >
             {board.flat().map((cell) => (
@@ -433,17 +429,17 @@ function GameBoard({
                   )}
                >
                   {cell.isShip && (
-                     <Draggable
+                     <DraggableShip
                         size={cell.shipSize}
                         orientation={cell.shipOrientation}
                         id={cell.shipId}
                      >
                         <ShipPiece
                            cellSize={cellSize}
-                           shipPiece={cell.shipPiece as ShipPieceType}
-                           orientation={cell.shipOrientation as ShipOrientation}
+                           shipPiece={cell.shipPiece}
+                           orientation={cell.shipOrientation}
                         />
-                     </Draggable>
+                     </DraggableShip>
                   )}
                </DroppableCell>
             ))}
@@ -488,63 +484,27 @@ function DroppableCell({
    );
 }
 
-function ShipCatalogueItem({ size }: Readonly<{ size: number }>) {
-   return (
-      <div className="flex items-center justify-between gap-1">
-         {Array.from({ length: size }).map((v, i) => (
-            <div
-               key={i}
-               className={cn(
-                  "h-8 w-8 bg-slate-500",
-                  "first-of-type:rounded-l-full last-of-type:rounded-r-full"
-               )}
-            ></div>
-         ))}
-      </div>
-   );
-}
-
 function Ship({
    size,
    orientation,
    cellSize,
-   boardSize,
-}: Readonly<{ size: number; orientation: ShipOrientation; cellSize: number; boardSize: number }>) {
+}: Readonly<{ size: number; orientation: ShipOrientation; cellSize: number }>) {
    return (
       <div
          style={{
-            height:
-               orientation === "horizontal"
-                  ? cellSize
-                  : size * cellSize + (size - 1) * (14 - boardSize),
-            width:
-               orientation === "horizontal"
-                  ? size * cellSize + (size - 1) * (14 - boardSize)
-                  : cellSize,
+            height: orientation === "horizontal" ? cellSize : size * cellSize,
+            width: orientation === "horizontal" ? size * cellSize : cellSize,
+            display: "flex",
+            flexDirection: orientation === "horizontal" ? "row" : "column",
          }}
-         className={cn(
-            "flex gap-1",
-            orientation === "horizontal" && "flex-row",
-            orientation === "vertical" && "flex-col"
-         )}
       >
-         {Array.from({ length: size }).map((v, i) => (
-            <div
-               style={{
-                  marginTop: orientation === "vertical" ? cellSize / 50 : 8,
-                  marginBottom: orientation === "vertical" ? cellSize / 50 : 8,
-                  marginRight: orientation === "horizontal" ? cellSize / 50 : 8,
-                  marginLeft: orientation === "horizontal" ? cellSize / 50 : 8,
-               }}
+         {Array.from({ length: size }).map((_, i) => (
+            <ShipPiece
                key={i}
-               className={cn(
-                  "h-full w-full bg-slate-500",
-                  orientation === "horizontal" &&
-                     "first-of-type:rounded-l-full last-of-type:rounded-r-full",
-                  orientation === "vertical" &&
-                     "first-of-type:rounded-t-full last-of-type:rounded-b-full"
-               )}
-            ></div>
+               cellSize={cellSize}
+               orientation={orientation}
+               shipPiece={i === 0 ? "start" : i === size - 1 ? "end" : "mid"}
+            />
          ))}
       </div>
    );
@@ -560,100 +520,39 @@ function ShipPiece({
          style={{
             height: cellSize,
             width: cellSize,
-            paddingTop: orientation === "vertical" ? cellSize / 50 : 8,
-            paddingBottom: orientation === "vertical" ? cellSize / 50 : 8,
-            paddingRight: orientation === "horizontal" ? cellSize / 50 : 8,
-            paddingLeft: orientation === "horizontal" ? cellSize / 50 : 8,
+            paddingLeft:
+               orientation === "horizontal" ? (shipPiece === "start" ? cellSize / 10 : 0) : 5,
+            paddingRight:
+               orientation === "horizontal" ? (shipPiece === "end" ? cellSize / 10 : 0) : 5,
+            paddingTop:
+               orientation === "vertical" ? (shipPiece === "start" ? cellSize / 10 : 0) : 5,
+            paddingBottom:
+               orientation === "vertical" ? (shipPiece === "end" ? cellSize / 10 : 0) : 5,
          }}
       >
          <div
             className={cn(
                "h-full w-full bg-slate-500",
-               orientation === "horizontal" && shipPiece === "start" && "rounded-l-full",
-               orientation === "horizontal" && shipPiece === "end" && "rounded-r-full",
-               orientation === "vertical" && shipPiece === "start" && "rounded-t-full",
-               orientation === "vertical" && shipPiece === "end" && "rounded-b-full"
+               orientation === "horizontal" &&
+                  shipPiece === "start" &&
+                  "rounded-l-full border-r-4 border-slate-700",
+               orientation === "horizontal" &&
+                  shipPiece === "end" &&
+                  "rounded-r-full border-l-4 border-slate-700",
+               orientation === "horizontal" &&
+                  shipPiece === "mid" &&
+                  "border-l-4 border-r-4 border-slate-700",
+               orientation === "vertical" &&
+                  shipPiece === "start" &&
+                  "rounded-t-full border-b-4 border-slate-700",
+               orientation === "vertical" &&
+                  shipPiece === "end" &&
+                  "rounded-b-full border-t-4 border-slate-700",
+               orientation === "vertical" &&
+                  shipPiece === "mid" &&
+                  "border-b-4 border-t-4 border-slate-700"
             )}
          ></div>
-      </div>
-   );
-}
-
-function Draggable({
-   children,
-   size,
-   orientation,
-   id,
-}: Readonly<
-   PropsWithChildren<{ size: number; orientation: "horizontal" | "vertical"; id?: string }>
->) {
-   const uniqueId = useId();
-   const draggableId = id ?? uniqueId;
-   const { attributes, listeners, setNodeRef, transform } = useDraggable({
-      id: draggableId,
-      data: { size, orientation },
-   });
-   const style = {
-      transform: CSS.Translate.toString(transform),
-   };
-
-   return (
-      <button
-         ref={setNodeRef}
-         style={style}
-         {...listeners}
-         {...attributes}
-         className="block touch-none"
-      >
-         {children}
-      </button>
-   );
-}
-
-interface ShipCatalogueProps extends ComponentProps<"div"> {
-   shipsToPlace: ShipAmounts;
-   orientation: ShipOrientation;
-   draggingId: string | null;
-}
-
-function ShipCatalogue({
-   shipsToPlace,
-   orientation,
-   draggingId,
-   ...props
-}: Readonly<ShipCatalogueProps>) {
-   const shouldDisplayGhost = (shipType: ShipType) => {
-      return draggingId?.startsWith(shipType) || shipsToPlace[shipType] < 1;
-   };
-
-   return (
-      <div {...props} className={cn("flex flex-col gap-2", props.className && props.className)}>
-         {(Object.keys(shipsToPlace) as ShipType[]).map((shipType) => (
-            <div key={shipType} className="relative">
-               {shipsToPlace[shipType] > 0 && (
-                  <Draggable
-                     key={shipType}
-                     size={shipSizes[shipType]}
-                     orientation={orientation}
-                     id={`${shipType}-${shipsToPlace[shipType]}`}
-                  >
-                     {!draggingId?.startsWith(shipType) && (
-                        <ShipCatalogueItem size={shipSizes[shipType]} />
-                     )}
-                  </Draggable>
-               )}
-               <div
-                  className={cn(
-                     "absolute left-0 top-0 -z-10",
-                     shipsToPlace[shipType] < 1 && "opacity-50",
-                     shipsToPlace[shipType] === 1 && draggingId && "opacity-50"
-                  )}
-               >
-                  <ShipCatalogueItem size={shipSizes[shipType]} />
-               </div>
-               {shouldDisplayGhost(shipType) && <div className="h-8"></div>}
-            </div>
-         ))}
       </div>
    );
 }
