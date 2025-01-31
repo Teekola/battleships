@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import { generateGameBoard } from "../(utils)/generate-game-board";
 import { placeShipsOnGameBoard } from "../(utils)/place-ships-on-game-board";
 import { HoveredCells, PlacedShip } from "../(utils)/types";
@@ -16,8 +18,11 @@ export function GameBoard({
    placedShips: PlacedShip[];
    cellSize: number;
 }>) {
-   const board = generateGameBoard(size);
-   placeShipsOnGameBoard(placedShips, board);
+   const board = useMemo(() => {
+      const gameBoard = generateGameBoard(size);
+      placeShipsOnGameBoard(placedShips, gameBoard);
+      return gameBoard;
+   }, [size, placedShips]);
 
    return (
       <div className="max-h-lg aspect-square max-w-lg">
