@@ -22,7 +22,9 @@ export function GameBoard({
       const gameBoard = generateGameBoard(size);
       placeShipsOnGameBoard(placedShips, gameBoard);
       return gameBoard;
-   }, [size, placedShips]);
+      // cellSize is also needed so that everything is replaced correctly
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, [size, placedShips, cellSize]);
 
    return (
       <div className="max-h-lg aspect-square max-w-lg">

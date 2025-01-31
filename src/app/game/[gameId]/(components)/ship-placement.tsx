@@ -208,7 +208,7 @@ export function ShipPlacement() {
    useEffect(() => () => handleDragMove.cancel(), [handleDragMove]);
 
    return (
-      <div>
+      <div className="p-4">
          <h1 className="text-2xl font-bold">Place Your Ships</h1>
          <DndContext
             id={id}

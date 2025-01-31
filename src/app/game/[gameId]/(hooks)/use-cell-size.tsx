@@ -9,6 +9,7 @@ export function useCellSize(gameBoardSize: number) {
       const updateCellSize = throttle(() => {
          const dataCell = document.querySelector('[data-cell="true"]');
          if (dataCell) {
+            console.log("UPDATE");
             setCellSize(dataCell.getClientRects()[0].width);
          }
       }, 300);
