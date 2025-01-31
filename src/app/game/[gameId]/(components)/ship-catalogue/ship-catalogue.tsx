@@ -3,7 +3,7 @@ import { ComponentProps } from "react";
 import { ShipType, shipSizes } from "@/app/create-game/create-game-form-schema";
 import { cn } from "@/lib/utils";
 
-import { ShipAmounts, ShipOrientation } from "../../page";
+import { ShipAmounts, ShipOrientation } from "../../(utils)/types";
 import { DraggableShip } from "../draggable-ship";
 import { ShipCatalogueItem } from "./ship-catalogue-item";
 
@@ -24,33 +24,35 @@ export function ShipCatalogue({
    };
 
    return (
-      <div {...props} className={cn("flex flex-col gap-2", props.className && props.className)}>
-         {(Object.keys(shipsToPlace) as ShipType[]).map((shipType) => (
-            <div key={shipType} className="relative">
-               {shipsToPlace[shipType] > 0 && (
-                  <DraggableShip
-                     key={shipType}
-                     size={shipSizes[shipType]}
-                     orientation={orientation}
-                     id={`${shipType}-${shipsToPlace[shipType]}`}
-                  >
-                     {!draggingId?.startsWith(shipType) && (
-                        <ShipCatalogueItem size={shipSizes[shipType]} />
-                     )}
-                  </DraggableShip>
-               )}
-               <div
-                  className={cn(
-                     "absolute left-0 top-0 -z-10",
-                     shipsToPlace[shipType] < 1 && "opacity-50",
-                     shipsToPlace[shipType] === 1 && draggingId && "opacity-50"
+      <div {...props}>
+         <div className={cn("flex flex-col gap-2", props.className && props.className)}>
+            {(Object.keys(shipsToPlace) as ShipType[]).map((shipType) => (
+               <div key={shipType} className="relative">
+                  {shipsToPlace[shipType] > 0 && (
+                     <DraggableShip
+                        key={shipType}
+                        size={shipSizes[shipType]}
+                        orientation={orientation}
+                        id={`${shipType}-${shipsToPlace[shipType]}`}
+                     >
+                        {!draggingId?.startsWith(shipType) && (
+                           <ShipCatalogueItem size={shipSizes[shipType]} />
+                        )}
+                     </DraggableShip>
                   )}
-               >
-                  <ShipCatalogueItem size={shipSizes[shipType]} />
+                  <div
+                     className={cn(
+                        "absolute left-0 top-0 -z-10",
+                        shipsToPlace[shipType] < 1 && "opacity-50",
+                        shipsToPlace[shipType] === 1 && draggingId && "opacity-50"
+                     )}
+                  >
+                     <ShipCatalogueItem size={shipSizes[shipType]} />
+                  </div>
+                  {shouldDisplayGhost(shipType) && <div className="h-8"></div>}
                </div>
-               {shouldDisplayGhost(shipType) && <div className="h-8"></div>}
-            </div>
-         ))}
+            ))}
+         </div>
       </div>
    );
 }

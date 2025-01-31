@@ -1,0 +1,40 @@
+import { ShipType, shipSizes } from "@/app/create-game/create-game-form-schema";
+
+export interface Coordinates {
+   x: number;
+   y: number;
+}
+export type ShipPieceType = "start" | "mid" | "end";
+export type ShipOrientation = "horizontal" | "vertical";
+
+export type BoardWithShips = BoardCell[][];
+export type BoardCell =
+   | {
+        x: number;
+        y: number;
+        isShip: true;
+        shipId: string;
+        shipSize: number;
+        shipOrientation: ShipOrientation;
+        shipPiece: ShipPieceType;
+     }
+   | { x: number; y: number; isShip: false };
+
+export type HoveredCells = {
+   canPlace: boolean;
+   coordinates: HoveredCell[];
+};
+
+export interface HoveredCell extends Coordinates {
+   isOccupied: boolean;
+}
+
+export type PlacedShip = {
+   id: string;
+   shipType: ShipType;
+   coordinates: Coordinates;
+   size: number;
+   orientation: ShipOrientation;
+};
+
+export type ShipAmounts = typeof shipSizes;
