@@ -1,6 +1,14 @@
 "use client";
 
-import { Fragment, PropsWithChildren, useEffect, useId, useMemo, useState } from "react";
+import {
+   ComponentProps,
+   Fragment,
+   PropsWithChildren,
+   useEffect,
+   useId,
+   useMemo,
+   useState,
+} from "react";
 
 import {
    DndContext,
@@ -15,7 +23,9 @@ import {
    useSensor,
    useSensors,
 } from "@dnd-kit/core";
+import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
+import debounce from "lodash.debounce";
 import throttle from "lodash.throttle";
 
 import { ShipType, shipSizes } from "@/app/create-game/create-game-form-schema";
@@ -35,6 +45,8 @@ type BoardCell =
         x: number;
         y: number;
         isShip: true;
+        shipId: string;
+        shipSize: number;
         shipOrientation: ShipOrientation;
         shipPiece: ShipPieceType;
      }
@@ -50,6 +62,8 @@ interface HoveredCell extends Coordinates {
 }
 
 type PlacedShips = {
+   id: string;
+   shipType: ShipType;
    coordinates: Coordinates;
    size: number;
    orientation: ShipOrientation;
@@ -75,7 +89,7 @@ function generateGameBoard(size: number): BoardWithShips {
 }
 
 function placeShipsOnGameBoard(ships: PlacedShips, board: BoardWithShips) {
-   ships.forEach(({ coordinates, orientation, size }) => {
+   ships.forEach(({ coordinates, orientation, size, id }) => {
       const { x, y } = coordinates;
       for (let i = 0; i < size; i++) {
          const isStart = i === 0;
@@ -87,6 +101,8 @@ function placeShipsOnGameBoard(ships: PlacedShips, board: BoardWithShips) {
                x: x + i,
                y,
                isShip: true,
+               shipId: id,
+               shipSize: size,
                shipOrientation: orientation,
                shipPiece,
             };
@@ -95,6 +111,8 @@ function placeShipsOnGameBoard(ships: PlacedShips, board: BoardWithShips) {
                x,
                y: y + i,
                isShip: true,
+               shipId: id,
+               shipSize: size,
                shipOrientation: orientation,
                shipPiece,
             };
@@ -103,18 +121,35 @@ function placeShipsOnGameBoard(ships: PlacedShips, board: BoardWithShips) {
    });
 }
 
-const shipAmounts = {
-   carrier: 1,
-   battleship: 1,
-   cruiser: 1,
-   submarine: 1,
-   destroyer: 2,
-};
+function getAllShipsCoordinates({ placedShips }: { placedShips: PlacedShips }) {
+   const newAllShipsCoordinates = new Set<string>();
+   for (const { orientation, size, coordinates } of placedShips) {
+      if (orientation === "horizontal") {
+         for (let i = 0; i < size; i++) {
+            newAllShipsCoordinates.add(`${coordinates.x + i},${coordinates.y}`);
+         }
+      } else if (orientation === "vertical") {
+         for (let i = 0; i < size; i++) {
+            newAllShipsCoordinates.add(`${coordinates.x},${coordinates.y + i}`);
+         }
+      }
+   }
+   return newAllShipsCoordinates;
+}
+
+type ShipAmounts = typeof shipSizes;
 
 export default function GamePage() {
+   const shipAmounts = {
+      carrier: 1,
+      battleship: 1,
+      cruiser: 1,
+      submarine: 1,
+      destroyer: 2,
+   };
+   const gameBoardSize = 6;
    const id = useId();
    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
-   const gameBoardSize = 10;
    const [cellSize, setCellSize] = useState<number>(0);
    const [draggingId, setDraggingId] = useState<string | null>(null);
    const [placedShips, setPlacedShips] = useState<PlacedShips>([]);
@@ -125,21 +160,49 @@ export default function GamePage() {
    const [isDragging, setIsDragging] = useState(false);
    const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
 
-   const [shipsToPlace, setShipsToPlace] = useState(shipAmounts);
+   const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(shipAmounts);
    const [orientation, setOrientation] = useState<ShipOrientation>("vertical");
 
-   // Update grid size
    useEffect(() => {
-      const dataCell = document.querySelector('[data-cell="true"]');
-      if (!dataCell) return;
-      const size = dataCell.getClientRects()[0].width;
-      setCellSize(size);
+      function updateCellSize() {
+         const dataCell = document.querySelector('[data-cell="true"]');
+         if (!dataCell) return;
+         const size = dataCell.getClientRects()[0].width;
+         setCellSize(size);
+      }
+      updateCellSize();
 
-      // TODO: Add event listener to resize
-   }, []);
+      const debouncedUpdateCellSize = debounce(updateCellSize, 200);
+
+      window.addEventListener("resize", debouncedUpdateCellSize);
+
+      return () => {
+         window.removeEventListener("resize", debouncedUpdateCellSize);
+      };
+   }, [gameBoardSize]);
 
    function handleDragStart(e: DragStartEvent) {
-      setDraggingId(e.active.id + "");
+      const shipId = String(e.active.id);
+      setDraggingId(shipId);
+
+      // If the ship is in placed ships,
+      // 1) remove it from placed ships
+      // 2) reset allships coordinates
+      // 3) update orientation to match its placement
+      const placedShip = placedShips.find((ship) => ship.id === shipId);
+      if (placedShip) {
+         const newPlacedShips = placedShips.filter((ps) => ps.id !== shipId);
+         const newShipsToPlace = {
+            ...shipsToPlace,
+            [placedShip.shipType]: shipsToPlace[placedShip.shipType] + 1,
+         };
+         setShipsToPlace(newShipsToPlace);
+         setOrientation(placedShip.orientation);
+         setPlacedShips(newPlacedShips);
+         const newAllShipsCoordinates = getAllShipsCoordinates({ placedShips: newPlacedShips });
+         setAllShipsCoordinates(newAllShipsCoordinates);
+      }
+
       setIsDragging(true);
    }
 
@@ -162,7 +225,8 @@ export default function GamePage() {
          return;
       }
 
-      const shipType = String(e.active.id).split("-")[0] as ShipType;
+      const shipId = String(e.active.id);
+      const shipType = shipId.split("-")[0] as ShipType;
       const data = e.active.data.current;
       const size = data?.size as number;
       const orientation = data?.orientation as ShipOrientation;
@@ -173,20 +237,11 @@ export default function GamePage() {
 
       const coordinates = { x, y };
 
-      const newPlacedShips = placedShips.concat([{ coordinates, size, orientation }]);
+      const newPlacedShips = placedShips.concat([
+         { coordinates, size, orientation, id: shipId, shipType },
+      ]);
 
-      const newAllShipsCoordinates = new Set<string>();
-      for (const { orientation, size, coordinates } of newPlacedShips) {
-         if (orientation === "horizontal") {
-            for (let i = 0; i < size; i++) {
-               newAllShipsCoordinates.add(`${coordinates.x + i},${coordinates.y}`);
-            }
-         } else if (orientation === "vertical") {
-            for (let i = 0; i < size; i++) {
-               newAllShipsCoordinates.add(`${coordinates.x},${coordinates.y + i}`);
-            }
-         }
-      }
+      const newAllShipsCoordinates = getAllShipsCoordinates({ placedShips: newPlacedShips });
 
       const newShipsToPlace = { ...shipsToPlace, [shipType]: shipsToPlace[shipType] - 1 };
       setShipsToPlace(newShipsToPlace);
@@ -266,15 +321,16 @@ export default function GamePage() {
             console.log("MOVE");
          },
          100,
-         { leading: true, trailing: true } // Ensures the last call is fired
+         { leading: true, trailing: true }
       );
    }, [allShipsCoordinates, draggingId, isDragging]);
 
    useEffect(() => {
       return () => {
-         handleDragMove.cancel(); // Cancel pending throttled calls on unmount
+         handleDragMove.cancel();
       };
    }, [handleDragMove]);
+
    // Ensure that if the move is fired after releasing, the selection is cleared
    useEffect(() => {
       let timeout: NodeJS.Timeout;
@@ -299,6 +355,7 @@ export default function GamePage() {
             onDragMove={handleDragMove}
             onDragAbort={handleDragAbort}
             onDragCancel={handleDragCancel}
+            modifiers={[snapCenterToCursor]}
          >
             <GameBoard
                size={gameBoardSize}
@@ -306,7 +363,8 @@ export default function GamePage() {
                placedShips={placedShips}
                cellSize={cellSize}
             />
-            <ShipCatalogue>
+
+            <div>
                <Button
                   onClick={() =>
                      setOrientation((prev) => (prev === "horizontal" ? "vertical" : "horizontal"))
@@ -314,46 +372,20 @@ export default function GamePage() {
                >
                   {orientation}
                </Button>
-               {Object.keys(shipsToPlace).map((shipType) => (
-                  <div className="relative" style={{ minHeight: cellSize }} key={shipType}>
-                     {shipsToPlace[shipType as ShipType] > 0 && (
-                        <Draggable
-                           key={shipType}
-                           size={shipSizes[shipType as ShipType]}
-                           orientation={orientation}
-                           id={`${shipType}-${shipsToPlace[shipType as ShipType]}`}
-                        >
-                           {!draggingId?.startsWith(shipType) && (
-                              <Ship
-                                 size={shipSizes[shipType as ShipType]}
-                                 orientation="horizontal"
-                                 cellSize={cellSize}
-                              />
-                           )}
-                        </Draggable>
-                     )}
-                     <div
-                        className={cn(
-                           "absolute left-0 top-0 -z-10",
-                           shipsToPlace[shipType as ShipType] < 1 && "opacity-50",
-                           shipsToPlace[shipType as ShipType] === 1 && isDragging && "opacity-50"
-                        )}
-                     >
-                        <Ship
-                           size={shipSizes[shipType as ShipType]}
-                           orientation="horizontal"
-                           cellSize={cellSize}
-                        />
-                     </div>
-                  </div>
-               ))}
-            </ShipCatalogue>
-            <DragOverlay>
-               {Object.keys(shipsToPlace).map((shipType) => (
+            </div>
+            <ShipCatalogue
+               shipsToPlace={shipsToPlace}
+               orientation={orientation}
+               draggingId={draggingId}
+            />
+
+            <DragOverlay dropAnimation={{ duration: 0 }}>
+               {(Object.keys(shipsToPlace) as ShipType[]).map((shipType) => (
                   <Fragment key={shipType}>
                      {draggingId?.startsWith(shipType) && (
                         <Ship
-                           size={shipSizes[shipType as ShipType]}
+                           boardSize={gameBoardSize}
+                           size={shipSizes[shipType]}
                            orientation={orientation}
                            cellSize={cellSize}
                         />
@@ -383,10 +415,11 @@ function GameBoard({
    return (
       <div className="max-h-lg aspect-square max-w-lg">
          <div
-            className="grid h-full w-full gap-1 bg-blue-950"
+            className="grid h-full w-full bg-blue-950"
             style={{
                gridTemplateColumns: `repeat(${size}, 1fr)`,
                gridTemplateRows: `repeat(${size}, 1fr)`,
+               gap: 14 - size,
             }}
          >
             {board.flat().map((cell) => (
@@ -400,11 +433,17 @@ function GameBoard({
                   )}
                >
                   {cell.isShip && (
-                     <ShipPiece
-                        cellSize={cellSize}
-                        shipPiece={cell.shipPiece as ShipPieceType}
-                        orientation={cell.shipOrientation as ShipOrientation}
-                     />
+                     <Draggable
+                        size={cell.shipSize}
+                        orientation={cell.shipOrientation}
+                        id={cell.shipId}
+                     >
+                        <ShipPiece
+                           cellSize={cellSize}
+                           shipPiece={cell.shipPiece as ShipPieceType}
+                           orientation={cell.shipOrientation as ShipOrientation}
+                        />
+                     </Draggable>
                   )}
                </DroppableCell>
             ))}
@@ -449,25 +488,54 @@ function DroppableCell({
    );
 }
 
+function ShipCatalogueItem({ size }: Readonly<{ size: number }>) {
+   return (
+      <div className="flex items-center justify-between gap-1">
+         {Array.from({ length: size }).map((v, i) => (
+            <div
+               key={i}
+               className={cn(
+                  "h-8 w-8 bg-slate-500",
+                  "first-of-type:rounded-l-full last-of-type:rounded-r-full"
+               )}
+            ></div>
+         ))}
+      </div>
+   );
+}
+
 function Ship({
    size,
    orientation,
    cellSize,
-}: Readonly<{ size: number; orientation: ShipOrientation; cellSize: number }>) {
+   boardSize,
+}: Readonly<{ size: number; orientation: ShipOrientation; cellSize: number; boardSize: number }>) {
    return (
       <div
          style={{
-            height: orientation === "horizontal" ? cellSize : size * cellSize,
-            width: orientation === "horizontal" ? size * cellSize : cellSize,
+            height:
+               orientation === "horizontal"
+                  ? cellSize
+                  : size * cellSize + (size - 1) * (14 - boardSize),
+            width:
+               orientation === "horizontal"
+                  ? size * cellSize + (size - 1) * (14 - boardSize)
+                  : cellSize,
          }}
          className={cn(
-            "flex gap-1 p-2",
+            "flex gap-1",
             orientation === "horizontal" && "flex-row",
             orientation === "vertical" && "flex-col"
          )}
       >
          {Array.from({ length: size }).map((v, i) => (
             <div
+               style={{
+                  marginTop: orientation === "vertical" ? cellSize / 50 : 8,
+                  marginBottom: orientation === "vertical" ? cellSize / 50 : 8,
+                  marginRight: orientation === "horizontal" ? cellSize / 50 : 8,
+                  marginLeft: orientation === "horizontal" ? cellSize / 50 : 8,
+               }}
                key={i}
                className={cn(
                   "h-full w-full bg-slate-500",
@@ -492,11 +560,11 @@ function ShipPiece({
          style={{
             height: cellSize,
             width: cellSize,
+            paddingTop: orientation === "vertical" ? cellSize / 50 : 8,
+            paddingBottom: orientation === "vertical" ? cellSize / 50 : 8,
+            paddingRight: orientation === "horizontal" ? cellSize / 50 : 8,
+            paddingLeft: orientation === "horizontal" ? cellSize / 50 : 8,
          }}
-         className={cn(
-            orientation === "horizontal" && "px-[1px] py-2",
-            orientation === "vertical" && "px-2 py-[1px]"
-         )}
       >
          <div
             className={cn(
@@ -530,12 +598,62 @@ function Draggable({
    };
 
    return (
-      <button ref={setNodeRef} style={style} {...listeners} {...attributes} className="touch-none">
+      <button
+         ref={setNodeRef}
+         style={style}
+         {...listeners}
+         {...attributes}
+         className="block touch-none"
+      >
          {children}
       </button>
    );
 }
 
-function ShipCatalogue({ children }: PropsWithChildren) {
-   return <div>{children}</div>;
+interface ShipCatalogueProps extends ComponentProps<"div"> {
+   shipsToPlace: ShipAmounts;
+   orientation: ShipOrientation;
+   draggingId: string | null;
+}
+
+function ShipCatalogue({
+   shipsToPlace,
+   orientation,
+   draggingId,
+   ...props
+}: Readonly<ShipCatalogueProps>) {
+   const shouldDisplayGhost = (shipType: ShipType) => {
+      return draggingId?.startsWith(shipType) || shipsToPlace[shipType] < 1;
+   };
+
+   return (
+      <div {...props} className={cn("flex flex-col gap-2", props.className && props.className)}>
+         {(Object.keys(shipsToPlace) as ShipType[]).map((shipType) => (
+            <div key={shipType} className="relative">
+               {shipsToPlace[shipType] > 0 && (
+                  <Draggable
+                     key={shipType}
+                     size={shipSizes[shipType]}
+                     orientation={orientation}
+                     id={`${shipType}-${shipsToPlace[shipType]}`}
+                  >
+                     {!draggingId?.startsWith(shipType) && (
+                        <ShipCatalogueItem size={shipSizes[shipType]} />
+                     )}
+                  </Draggable>
+               )}
+               <div
+                  className={cn(
+                     "absolute left-0 top-0 -z-10",
+                     shipsToPlace[shipType] < 1 && "opacity-50",
+                     shipsToPlace[shipType] === 1 && draggingId && "opacity-50"
+                  )}
+               >
+                  <ShipCatalogueItem size={shipSizes[shipType]} />
+               </div>
+               {shouldDisplayGhost(shipType) && <div className="h-8"></div>}
+            </div>
+         ))}
+      </div>
+   );
 }
