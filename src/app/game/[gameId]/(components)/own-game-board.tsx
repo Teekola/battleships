@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 
 import { generateGameBoard } from "../(utils)/generate-game-board";
 import { placeHitsOnGameBoard } from "../(utils)/place-hits-on-game-board";
@@ -11,7 +11,6 @@ export function OwnGameBoard({
    size,
    moves,
    placedShips,
-   handleOpponentHit,
 }: Readonly<{
    size: number;
    placedShips: PlacedShip[];
@@ -23,13 +22,6 @@ export function OwnGameBoard({
       placeShipsOnGameBoard(placedShips, gameBoard);
       return placeHitsOnGameBoard(moves, gameBoard, placedShips);
    }, [moves, size, placedShips]);
-
-   useEffect(() => {
-      handleOpponentHit({
-         x: Math.round(Math.random() * (size - 1)),
-         y: Math.round(Math.random() * (size - 1)),
-      });
-   }, [handleOpponentHit, size]);
 
    return (
       <div className="aspect-square">
