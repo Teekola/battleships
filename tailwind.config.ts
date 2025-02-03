@@ -68,9 +68,24 @@ export default {
                "0%,70%,100%": { opacity: "1" },
                "20%,50%": { opacity: "0" },
             },
+            hit: {
+               "0%": {
+                  transform: "translate(var(--hit-offset-x),var(--hit-offset-y)) scale(0.5)",
+                  opacity: "0",
+                  left: "0",
+                  top: "0",
+               },
+               "100%": {
+                  transform: "translate(-50%,-50%) scale(1)",
+                  opacity: "1",
+                  left: "50%",
+                  top: "50%",
+               },
+            },
          },
          animation: {
             "caret-blink": "caret-blink 1.25s ease-out infinite",
+            hit: "hit .15s ease-out forwards",
          },
       },
    },

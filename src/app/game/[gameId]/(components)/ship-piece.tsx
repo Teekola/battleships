@@ -41,7 +41,13 @@ export function ShipPiece({
    cellSize,
    orientation,
    shipPiece,
-}: Readonly<{ cellSize?: number; orientation: ShipOrientation; shipPiece: ShipPieceType }>) {
+   isSunk = false,
+}: Readonly<{
+   cellSize?: number;
+   orientation: ShipOrientation;
+   shipPiece: ShipPieceType;
+   isSunk?: boolean;
+}>) {
    return (
       <div style={getStyle({ cellSize, orientation, shipPiece })}>
          <div
@@ -64,7 +70,8 @@ export function ShipPiece({
                   "rounded-b-full border-t-4 border-slate-700",
                orientation === "vertical" &&
                   shipPiece === "mid" &&
-                  "border-b-4 border-t-4 border-slate-700"
+                  "border-b-4 border-t-4 border-slate-700",
+               isSunk && "border-red-950/30 bg-red-900/30 transition-colors duration-1000"
             )}
          ></div>
       </div>

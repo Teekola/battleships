@@ -20,6 +20,32 @@ export type BoardCell =
      }
    | { x: number; y: number; isShip: false };
 
+export type BoardWithShipsAndHits = GameBoardCell[][];
+
+export type GameBoardCell =
+   | {
+        x: number;
+        y: number;
+        isHit: boolean;
+        isShip: false;
+     }
+   | {
+        x: number;
+        y: number;
+        isHit: boolean;
+        isSunk: boolean;
+        isShip: true;
+        shipId: string;
+        shipSize: number;
+        shipOrientation: ShipOrientation;
+        shipPiece: ShipPieceType;
+     };
+
+export type Move = {
+   x: number;
+   y: number;
+};
+
 export type HoveredCells = {
    canPlace: boolean;
    coordinates: HoveredCell[];
