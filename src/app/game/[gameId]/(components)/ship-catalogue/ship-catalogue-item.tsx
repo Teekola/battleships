@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 export function ShipCatalogueItem({ size }: Readonly<{ size: number }>) {
    return (
-      <div className="flex items-center justify-between gap-1">
+      <div className="flex w-fit items-center justify-start gap-1">
          {Array.from({ length: size }).map((v, i) => (
             <div
                key={i}

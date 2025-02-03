@@ -1,27 +1,49 @@
+import { CSSProperties } from "react";
+
 import { cn } from "@/lib/utils";
 
 import { ShipOrientation, ShipPieceType } from "../(utils)/types";
+
+function getStyle({
+   orientation,
+   cellSize,
+   shipPiece,
+}: {
+   orientation: ShipOrientation;
+   cellSize?: number;
+   shipPiece: ShipPieceType;
+}) {
+   const lengthPadding = cellSize ? cellSize * 0.1 : "10%";
+   const widthPadding = cellSize ? cellSize * 0.15 : "15%";
+
+   const baseStyle: CSSProperties = {
+      width: cellSize ?? "100%",
+      height: cellSize ?? "100%",
+   };
+   const paddingStyles: CSSProperties =
+      orientation === "horizontal"
+         ? {
+              paddingLeft: shipPiece === "start" ? lengthPadding : 0,
+              paddingRight: shipPiece === "end" ? lengthPadding : 0,
+              paddingTop: widthPadding,
+              paddingBottom: widthPadding,
+           }
+         : {
+              paddingTop: shipPiece === "start" ? lengthPadding : 0,
+              paddingBottom: shipPiece === "end" ? lengthPadding : 0,
+              paddingRight: widthPadding,
+              paddingLeft: widthPadding,
+           };
+   return { ...baseStyle, ...paddingStyles };
+}
 
 export function ShipPiece({
    cellSize,
    orientation,
    shipPiece,
-}: Readonly<{ cellSize: number; orientation: ShipOrientation; shipPiece: ShipPieceType }>) {
+}: Readonly<{ cellSize?: number; orientation: ShipOrientation; shipPiece: ShipPieceType }>) {
    return (
-      <div
-         style={{
-            height: cellSize,
-            width: cellSize,
-            paddingLeft:
-               orientation === "horizontal" ? (shipPiece === "start" ? cellSize / 10 : 0) : 5,
-            paddingRight:
-               orientation === "horizontal" ? (shipPiece === "end" ? cellSize / 10 : 0) : 5,
-            paddingTop:
-               orientation === "vertical" ? (shipPiece === "start" ? cellSize / 10 : 0) : 5,
-            paddingBottom:
-               orientation === "vertical" ? (shipPiece === "end" ? cellSize / 10 : 0) : 5,
-         }}
-      >
+      <div style={getStyle({ cellSize, orientation, shipPiece })}>
          <div
             className={cn(
                "h-full w-full bg-slate-500",

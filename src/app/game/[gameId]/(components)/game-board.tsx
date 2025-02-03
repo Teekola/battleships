@@ -9,22 +9,18 @@ import { ShipPiece } from "./ship-piece";
 
 export function GameBoard({
    size,
-   cellSize,
    hoveredCells,
    placedShips,
 }: Readonly<{
    size: number;
    hoveredCells: HoveredCells;
    placedShips: PlacedShip[];
-   cellSize: number;
 }>) {
    const board = useMemo(() => {
       const gameBoard = generateGameBoard(size);
       placeShipsOnGameBoard(placedShips, gameBoard);
       return gameBoard;
-      // cellSize is also needed so that everything is replaced correctly
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-   }, [size, placedShips, cellSize]);
+   }, [size, placedShips]);
 
    return (
       <div className="max-h-lg aspect-square max-w-lg">
@@ -51,11 +47,7 @@ export function GameBoard({
                         orientation={cell.shipOrientation}
                         id={cell.shipId}
                      >
-                        <ShipPiece
-                           cellSize={cellSize}
-                           shipPiece={cell.shipPiece}
-                           orientation={cell.shipOrientation}
-                        />
+                        <ShipPiece shipPiece={cell.shipPiece} orientation={cell.shipOrientation} />
                      </DraggableShip>
                   )}
                </DroppableCell>

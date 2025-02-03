@@ -1,24 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import throttle from "lodash.throttle";
+import debounce from "lodash.debounce";
 
-export function useCellSize(gameBoardSize: number) {
-   const [cellSize, setCellSize] = useState<number>(gameBoardSize * 16);
+export function useCellSize() {
+   const [cellSize, setCellSize] = useState<number>(16);
+
+   const updateCellSize = useMemo(
+      () =>
+         debounce(
+            () => {
+               const dataCell = document.querySelector('[data-cell="true"]');
+               console.log(dataCell?.getClientRects()[0]?.width);
+               if (dataCell) {
+                  setCellSize(dataCell.getClientRects()[0]?.width);
+               }
+            },
+            300,
+            { leading: true }
+         ),
+      []
+   );
 
    useEffect(() => {
-      const updateCellSize = throttle(() => {
-         const dataCell = document.querySelector('[data-cell="true"]');
-         if (dataCell) {
-            console.log("UPDATE");
-            setCellSize(dataCell.getClientRects()[0].width);
-         }
-      }, 300);
-
       updateCellSize();
       window.addEventListener("resize", updateCellSize);
 
-      return () => window.removeEventListener("resize", updateCellSize);
-   }, [gameBoardSize]);
+      return () => {
+         window.removeEventListener("resize", updateCellSize);
+         updateCellSize.cancel();
+      };
+   }, [updateCellSize]);
 
    return cellSize;
 }

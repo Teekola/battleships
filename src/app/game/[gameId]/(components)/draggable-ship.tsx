@@ -27,7 +27,7 @@ export function DraggableShip({
          style={style}
          {...listeners}
          {...attributes}
-         className="block touch-none"
+         className="block h-full w-full touch-none"
       >
          {children}
       </button>

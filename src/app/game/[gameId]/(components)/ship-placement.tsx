@@ -16,13 +16,13 @@ import {
 import { snapCenterToCursor } from "@dnd-kit/modifiers";
 import { Coordinates } from "@dnd-kit/utilities";
 import throttle from "lodash.throttle";
-import { ArrowLeftRightIcon, ArrowUpDownIcon } from "lucide-react";
+import { ArrowLeftRightIcon, ArrowUpDownIcon, RefreshCwIcon } from "lucide-react";
 
 import { ShipType, shipSizes } from "@/app/create-game/create-game-form-schema";
 import { Button } from "@/components/ui/button";
 
-import { useCellSize } from "../(hooks)/use-cell-size";
 import { useClearSelectionOnRelease } from "../(hooks)/use-clear-selection-on-resize";
+import { useOrientation } from "../(hooks)/use-orientation";
 import { getAllShipsCoordinates } from "../(utils)/get-all-ships-coordinates";
 import {
    HoveredCell,
@@ -44,7 +44,7 @@ export function ShipPlacement() {
       destroyer: 2,
    };
    const gameBoardSize = 6;
-   const cellSize = useCellSize(gameBoardSize);
+
    const id = useId();
    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
    const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -55,8 +55,7 @@ export function ShipPlacement() {
    });
    const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
    const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(shipAmounts);
-   const [orientation, setOrientation] = useState<ShipOrientation>("vertical");
-
+   const { orientation, setOrientation, toggleOrientation } = useOrientation();
    const resetHoveredCells = useCallback(() => {
       setHoveredCells({ canPlace: false, coordinates: [] });
    }, []);
@@ -225,30 +224,29 @@ export function ShipPlacement() {
                   size={gameBoardSize}
                   hoveredCells={hoveredCells}
                   placedShips={placedShips}
-                  cellSize={cellSize}
                />
 
                <section className="flex flex-col gap-4">
-                  <div className="flex flex-col gap-1">
-                     <p>Ship direction:</p>
-
-                     <Button
-                        className="max-w-32 capitalize"
-                        onClick={() =>
-                           setOrientation((prev) =>
-                              prev === "horizontal" ? "vertical" : "horizontal"
-                           )
-                        }
-                     >
-                        {orientation}
-                        {orientation === "horizontal" ? (
-                           <ArrowLeftRightIcon />
-                        ) : (
-                           <ArrowUpDownIcon />
-                        )}
+                  <div className="flex w-full max-w-64 gap-1">
+                     <div className="flex w-full flex-col gap-1">
+                        <Button className="max-w-32 flex-1 capitalize" onClick={toggleOrientation}>
+                           {orientation}
+                           {orientation === "horizontal" ? (
+                              <ArrowLeftRightIcon />
+                           ) : (
+                              <ArrowUpDownIcon />
+                           )}
+                        </Button>
+                     </div>
+                     <Button>
+                        Reset <RefreshCwIcon />
                      </Button>
                   </div>
 
+                  <div>
+                     <p className="text-sm">Drag and drop ships to the board.</p>
+                     <p className="hidden text-sm sm:block">R / Right Click - Rotate Ship</p>
+                  </div>
                   <ShipCatalogue
                      shipsToPlace={shipsToPlace}
                      orientation={orientation}
@@ -261,11 +259,7 @@ export function ShipPlacement() {
                {(Object.keys(shipsToPlace) as ShipType[]).map((shipType) => (
                   <Fragment key={shipType}>
                      {draggingId?.startsWith(shipType) && (
-                        <Ship
-                           size={shipSizes[shipType]}
-                           orientation={orientation}
-                           cellSize={cellSize}
-                        />
+                        <Ship size={shipSizes[shipType]} orientation={orientation} />
                      )}
                   </Fragment>
                ))}

@@ -1,11 +1,12 @@
+import { useCellSize } from "../(hooks)/use-cell-size";
 import { ShipOrientation } from "../(utils)/types";
 import { ShipPiece } from "./ship-piece";
 
 export function Ship({
    size,
    orientation,
-   cellSize,
-}: Readonly<{ size: number; orientation: ShipOrientation; cellSize: number }>) {
+}: Readonly<{ size: number; orientation: ShipOrientation }>) {
+   const cellSize = useCellSize();
    return (
       <div
          style={{
@@ -17,8 +18,8 @@ export function Ship({
       >
          {Array.from({ length: size }).map((_, i) => (
             <ShipPiece
-               key={i}
                cellSize={cellSize}
+               key={i}
                orientation={orientation}
                shipPiece={i === 0 ? "start" : i === size - 1 ? "end" : "mid"}
             />
