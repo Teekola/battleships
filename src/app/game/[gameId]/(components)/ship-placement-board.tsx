@@ -23,7 +23,7 @@ export function ShipPlacementBoard({
    }, [size, placedShips]);
 
    return (
-      <div className="max-h-lg aspect-square max-w-lg">
+      <div className="aspect-square">
          <div
             className="grid h-full w-full bg-blue-950"
             style={{

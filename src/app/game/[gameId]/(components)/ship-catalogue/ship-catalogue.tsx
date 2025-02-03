@@ -30,6 +30,7 @@ export function ShipCatalogue({
                <div key={shipType} className="relative">
                   {shipsToPlace[shipType] > 0 && (
                      <DraggableShip
+                        className="w-fit"
                         key={shipType}
                         size={shipSizes[shipType]}
                         orientation={orientation}

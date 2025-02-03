@@ -20,6 +20,7 @@ import { ArrowLeftRightIcon, ArrowUpDownIcon, RefreshCwIcon } from "lucide-react
 
 import { ShipType, shipSizes } from "@/app/create-game/create-game-form-schema";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 import { useClearSelectionOnRelease } from "../(hooks)/use-clear-selection-on-resize";
 import { useOrientation } from "../(hooks)/use-orientation";
@@ -34,6 +35,10 @@ import {
 import { Ship } from "./ship";
 import { ShipCatalogue } from "./ship-catalogue";
 import { ShipPlacementBoard } from "./ship-placement-board";
+
+function checkIfHasPlacedAllShips(shipsToPlace: ShipAmounts) {
+   return Object.keys(shipsToPlace).every((key) => shipsToPlace[key as ShipType] < 1);
+}
 
 export function ShipPlacement() {
    const initialShipsToPlace = {
@@ -56,6 +61,8 @@ export function ShipPlacement() {
    const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
    const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(initialShipsToPlace);
    const { orientation, setOrientation, toggleOrientation } = useOrientation();
+   const [isReady, setReady] = useState(false);
+   const [message, setMessage] = useState("");
    const resetHoveredCells = useCallback(() => {
       setHoveredCells({ canPlace: false, coordinates: [] });
    }, []);
@@ -71,12 +78,14 @@ export function ShipPlacement() {
       setShipsToPlace(newShipsToPlace);
       setPlacedShips(newPlacedShips);
       setAllShipsCoordinates(getAllShipsCoordinates({ placedShips: newPlacedShips }));
+      setReady(false);
    }
 
    function clearPlacedShips() {
       setPlacedShips([]);
       setShipsToPlace(initialShipsToPlace);
       setAllShipsCoordinates(new Set());
+      setReady(false);
    }
 
    function handleDragStart(e: DragStartEvent) {
@@ -119,6 +128,11 @@ export function ShipPlacement() {
       const newShipsToPlace = { ...shipsToPlace, [shipType]: shipsToPlace[shipType] - 1 };
       setShipsToPlace(newShipsToPlace);
       resetHoveredCells();
+
+      const hasPlacedAllShips = checkIfHasPlacedAllShips(newShipsToPlace);
+      if (hasPlacedAllShips) {
+         setMessage("");
+      }
    }
 
    function handleDragEnd(e: DragEndEvent) {
@@ -210,6 +224,16 @@ export function ShipPlacement() {
       );
    }, [draggingId, highlightPlacement, resetHoveredCells]);
 
+   const hasPlacedAllShips = checkIfHasPlacedAllShips(shipsToPlace);
+
+   function handleSetReady() {
+      if (hasPlacedAllShips) {
+         setReady((prev) => !prev);
+         return;
+      }
+      setMessage("Place all ships first!");
+   }
+
    useEffect(() => () => handleDragMove.cancel(), [handleDragMove]);
 
    return (
@@ -225,17 +249,21 @@ export function ShipPlacement() {
             onDragCancel={handleDragCancel}
             modifiers={[snapCenterToCursor]}
          >
-            <div className="grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-[minmax(0,_3fr),minmax(0,_2fr)]">
                <ShipPlacementBoard
                   size={gameBoardSize}
                   hoveredCells={hoveredCells}
                   placedShips={placedShips}
                />
 
-               <section className="flex flex-col gap-4">
-                  <div className="flex w-full max-w-64 gap-1">
+               <section className="flex flex-col gap-4 sm:max-w-64">
+                  <div className="flex w-full gap-1">
                      <div className="flex w-full flex-col gap-1">
-                        <Button className="max-w-32 flex-1 capitalize" onClick={toggleOrientation}>
+                        <Button
+                           variant="outline"
+                           className="max-w-32 flex-1 capitalize"
+                           onClick={toggleOrientation}
+                        >
                            {orientation}
                            {orientation === "horizontal" ? (
                               <ArrowLeftRightIcon />
@@ -244,7 +272,7 @@ export function ShipPlacement() {
                            )}
                         </Button>
                      </div>
-                     <Button onClick={clearPlacedShips}>
+                     <Button variant="outline" onClick={clearPlacedShips}>
                         Reset <RefreshCwIcon />
                      </Button>
                   </div>
@@ -258,6 +286,16 @@ export function ShipPlacement() {
                      orientation={orientation}
                      draggingId={draggingId}
                   />
+                  <Button
+                     variant={isReady ? "green" : "default"}
+                     className={cn(isReady && "animate-pulse")}
+                     onClick={handleSetReady}
+                     data-disabled={!hasPlacedAllShips}
+                  >
+                     {isReady ? "Ready" : "Click here when ready"}
+                  </Button>
+                  {isReady && <p className="animate-pulse text-sm">Waiting for opponent...</p>}
+                  {message && <p className="text-sm text-red-500">{message}</p>}
                </section>
             </div>
 
