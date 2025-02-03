@@ -8,7 +8,9 @@
       "build": "next build",
       "start": "next start",
       "lint": "next lint",
-      "prepare": "husky"
+      "prepare": "husky",
+      "postinstall": "prisma generate",
+      "vercel-build": "prisma migrate deploy && next build"
    },
    "dependencies": {
       "@dnd-kit/core": "^6.3.1",
@@ -19,6 +21,7 @@
       "@radix-ui/react-label": "^2.1.1",
       "@radix-ui/react-select": "^2.1.5",
       "@radix-ui/react-slot": "^1.1.1",
+      "@supabase/supabase-js": "^2.48.1",
       "class-variance-authority": "^0.7.1",
       "clsx": "^2.1.1",
       "eslint-config-prettier": "^10.0.1",
@@ -33,6 +36,7 @@
       "server-only": "^0.0.1",
       "tailwind-merge": "^2.6.0",
       "tailwindcss-animate": "^1.0.7",
+      "uuid": "^11.0.5",
       "zod": "^3.24.1"
    },
    "devDependencies": {

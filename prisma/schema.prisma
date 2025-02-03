@@ -3,6 +3,38 @@ generator client {
 }
 
 datasource db {
-   provider = "postgresql"
-   url      = env("DATABASE_URL")
+   provider  = "postgresql"
+   url       = env("DATABASE_URL")
+   directUrl = env("DIRECT_URL")
+}
+
+model Game {
+   id            String         @id
+   player1Id     String?
+   player1Name   String?
+   player2Id     String?
+   player2Name   String?
+   state         GameState
+   gameEndReason GameEndReason?
+   boardSize     Int
+   carriers      Int
+   battleships   Int
+   cruisers      Int
+   submarines    Int
+   destroyers    Int
+   createdAt     DateTime       @default(now())
+   updatedAt     DateTime       @updatedAt
+}
+
+enum GameState {
+   WAITING_FOR_PLAYER
+   SHIP_PLACEMENT
+   PLAYING
+   FINISHED
+}
+
+enum GameEndReason {
+   WIN
+   TIE
+   TIMEOUT
 }

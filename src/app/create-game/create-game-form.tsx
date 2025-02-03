@@ -1,6 +1,6 @@
 "use client";
 
-import { ComponentProps, PropsWithChildren } from "react";
+import { ComponentProps, PropsWithChildren, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -8,11 +8,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { FieldValues, Path, useForm, useFormContext } from "react-hook-form";
 
+import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/select";
 
+import { createGame } from "./actions";
 import {
    CreateGameFormData,
    ShipType,
@@ -21,7 +23,6 @@ import {
    shipAmountOptionsByShipType,
    shipSizes,
 } from "./create-game-form-schema";
-import { generateGameId } from "./generate-game-id";
 
 export function CreateGameForm() {
    const router = useRouter();
@@ -29,18 +30,26 @@ export function CreateGameForm() {
       resolver: zodResolver(formSchema),
       defaultValues: {
          boardSize: 8,
-         nCarrier: 1,
-         nBattleship: 1,
-         nCruiser: 1,
-         nSubmarine: 1,
-         nDestroyer: 1,
+         carriers: 1,
+         battleships: 1,
+         cruisers: 1,
+         submarines: 1,
+         destroyers: 1,
       },
    });
+   const { playerId } = usePlayer();
+   const [isSubmitting, setIsSubmitting] = useState(false);
 
-   function onSubmit(values: CreateGameFormData) {
-      console.log(values);
-      const gameId = generateGameId();
+   async function onSubmit(data: CreateGameFormData) {
+      setIsSubmitting(true);
+      console.log(data);
+      const gameId = await createGame({ ...data, player1Id: playerId });
       router.push(`/game/${gameId}/join`);
+      setIsSubmitting(false);
+   }
+
+   if (isSubmitting) {
+      return <p>Creating game...</p>;
    }
 
    return (
@@ -60,31 +69,31 @@ export function CreateGameForm() {
             <section className="flex flex-col gap-2">
                <h2 className="font-bold">Ships</h2>
                <ShipAmountInput<CreateGameFormData>
-                  name="nCarrier"
+                  name="carriers"
                   label="Carriers"
                   shipType="carrier"
                   options={shipAmountOptionsByShipType.carrier}
                />
                <ShipAmountInput<CreateGameFormData>
-                  name="nBattleship"
+                  name="battleships"
                   label="Battleships"
                   shipType="battleship"
                   options={shipAmountOptionsByShipType.battleship}
                />
                <ShipAmountInput<CreateGameFormData>
-                  name="nCruiser"
+                  name="cruisers"
                   label="Cruisers"
                   shipType="cruiser"
                   options={shipAmountOptionsByShipType.cruiser}
                />
                <ShipAmountInput<CreateGameFormData>
-                  name="nSubmarine"
+                  name="submarines"
                   label="Submarines"
                   shipType="submarine"
                   options={shipAmountOptionsByShipType.submarine}
                />
                <ShipAmountInput<CreateGameFormData>
-                  name="nDestroyer"
+                  name="destroyers"
                   label="Destroyers"
                   shipType="destroyer"
                   options={shipAmountOptionsByShipType.destroyer}

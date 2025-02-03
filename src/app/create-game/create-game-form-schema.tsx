@@ -51,23 +51,23 @@ function calculateShipArea(ships: ShipToShipNumber) {
 export const formSchema = z
    .object({
       boardSize: z.number().min(5).max(10),
-      nCarrier: z.number().min(shipLimits.carrier.min).max(shipLimits.carrier.max),
-      nBattleship: z.number().min(shipLimits.battleship.min).max(shipLimits.battleship.max),
-      nCruiser: z.number().min(shipLimits.cruiser.min).max(shipLimits.cruiser.max),
-      nSubmarine: z.number().min(shipLimits.submarine.min).max(shipLimits.submarine.max),
-      nDestroyer: z.number().min(shipLimits.destroyer.min).max(shipLimits.destroyer.max),
+      carriers: z.number().min(shipLimits.carrier.min).max(shipLimits.carrier.max),
+      battleships: z.number().min(shipLimits.battleship.min).max(shipLimits.battleship.max),
+      cruisers: z.number().min(shipLimits.cruiser.min).max(shipLimits.cruiser.max),
+      submarines: z.number().min(shipLimits.submarine.min).max(shipLimits.submarine.max),
+      destroyers: z.number().min(shipLimits.destroyer.min).max(shipLimits.destroyer.max),
    })
    .refine((v) => {
-      const { boardSize, nCarrier, nBattleship, nCruiser, nSubmarine, nDestroyer } = v;
+      const { boardSize, carriers, battleships, cruisers, submarines, destroyers } = v;
 
       const boardArea = boardSize * boardSize;
 
       const shipArea = calculateShipArea({
-         carrier: nCarrier,
-         battleship: nBattleship,
-         cruiser: nCruiser,
-         submarine: nSubmarine,
-         destroyer: nDestroyer,
+         carrier: carriers,
+         battleship: battleships,
+         cruiser: cruisers,
+         submarine: submarines,
+         destroyer: destroyers,
       });
 
       const shipDensity = shipArea / boardArea;
