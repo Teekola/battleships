@@ -23,7 +23,7 @@ export function Game() {
          setTimeout(() => {
             setTurn("player2");
             setHasPlayed(false);
-         });
+         }, 1500);
       },
       [turn, hasPlayed]
    );
