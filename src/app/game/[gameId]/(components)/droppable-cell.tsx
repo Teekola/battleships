@@ -28,15 +28,13 @@ export function DroppableCell({
          data-cell="true"
          ref={setNodeRef}
          className={cn(
-            "group flex h-full w-full cursor-pointer items-center justify-center",
+            "flex h-full w-full cursor-pointer items-center justify-center",
             isShipOver && canPlace && "bg-blue-200",
             isShipOver && !canPlace && "bg-red-300"
          )}
       >
          {isShip && children}
-         {!isShip && (
-            <div className="h-1/4 w-1/4 rounded-full bg-blue-300 group-hover:bg-blue-500"></div>
-         )}
+         {!isShip && <div className="h-1/4 w-1/4 rounded-full bg-blue-300"></div>}
       </div>
    );
 }
