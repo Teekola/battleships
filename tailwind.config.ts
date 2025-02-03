@@ -82,10 +82,28 @@ export default {
                   top: "50%",
                },
             },
+            "sink-ship": {
+               "0%": {
+                  borderColor: "rgba(55, 65, 81, 1)",
+                  backgroundColor: "rgba(107, 114, 128, 1)",
+                  opacity: "0",
+               },
+               "15%": {
+                  borderColor: "rgba(186, 28, 28, 0.3)",
+                  backgroundColor: "rgba(127, 29, 29, 0.3)",
+                  opacity: "0",
+               },
+               "100%": {
+                  borderColor: "rgba(186, 28, 28, 0.3)",
+                  backgroundColor: "rgba(127, 29, 29, 0.3)",
+                  opacity: "1",
+               },
+            },
          },
          animation: {
             "caret-blink": "caret-blink 1.25s ease-out infinite",
             hit: "hit .15s ease-out forwards",
+            "sink-ship": "sink-ship 1s ease-out forwards",
          },
       },
    },

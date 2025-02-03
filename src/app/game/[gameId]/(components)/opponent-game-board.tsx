@@ -1,4 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
+
+import { cn } from "@/lib/utils";
 
 import { generateGameBoard } from "../(utils)/generate-game-board";
 import { placeHitsOnGameBoard } from "../(utils)/place-hits-on-game-board";
@@ -7,29 +9,22 @@ import { Coordinates, Move, PlacedShip } from "../(utils)/types";
 import { HitOverlay } from "./hit-overlay";
 import { ShipPiece } from "./ship-piece";
 
-export function OwnGameBoard({
+export function OpponentGameBoard({
    size,
    moves,
    placedShips,
-   handleOpponentHit,
+   hitCoordinate,
 }: Readonly<{
    size: number;
    placedShips: PlacedShip[];
    moves: Move[];
-   handleOpponentHit: (coordinates: Coordinates) => void;
+   hitCoordinate: (coordinates: Coordinates) => void;
 }>) {
    const board = useMemo(() => {
       const gameBoard = generateGameBoard(size);
       placeShipsOnGameBoard(placedShips, gameBoard);
       return placeHitsOnGameBoard(moves, gameBoard, placedShips);
    }, [moves, size, placedShips]);
-
-   useEffect(() => {
-      handleOpponentHit({
-         x: Math.round(Math.random() * (size - 1)),
-         y: Math.round(Math.random() * (size - 1)),
-      });
-   }, [handleOpponentHit, size]);
 
    return (
       <div className="aspect-square">
@@ -43,17 +38,23 @@ export function OwnGameBoard({
             {board.flat().map((cell) => (
                <div
                   key={`${cell.x}-${cell.y}`}
-                  className="relative flex h-full w-full items-center justify-center"
+                  {...(!cell.isHit && { onClick: () => hitCoordinate({ x: cell.x, y: cell.y }) })}
+                  className={cn(
+                     "group relative flex h-full w-full items-center justify-center",
+                     !cell.isHit && "cursor-pointer"
+                  )}
                >
                   {cell.isHit && <HitOverlay isShip={cell.isShip} />}
-                  {cell.isShip && (
+                  {cell.isShip && cell.isSunk && (
                      <ShipPiece
                         shipPiece={cell.shipPiece}
                         orientation={cell.shipOrientation}
                         isSunk={cell.isSunk}
                      />
                   )}
-                  {!cell.isShip && <div className="h-1/4 w-1/4 rounded-full bg-blue-300/20"></div>}
+                  {!cell.isHit && (
+                     <div className="h-1/4 w-1/4 rounded-full bg-blue-300/20 group-hover:bg-blue-400"></div>
+                  )}
                </div>
             ))}
          </div>

@@ -71,7 +71,7 @@ export function ShipPiece({
                orientation === "vertical" &&
                   shipPiece === "mid" &&
                   "border-b-4 border-t-4 border-slate-700",
-               isSunk && "border-red-950/30 bg-red-900/30 transition-colors duration-1000"
+               isSunk && "animate-sink-ship"
             )}
          ></div>
       </div>
