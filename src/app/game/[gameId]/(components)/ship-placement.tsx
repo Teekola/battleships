@@ -31,12 +31,12 @@ import {
    ShipAmounts,
    ShipOrientation,
 } from "../(utils)/types";
-import { GameBoard } from "./game-board";
 import { Ship } from "./ship";
 import { ShipCatalogue } from "./ship-catalogue";
+import { ShipPlacementBoard } from "./ship-placement-board";
 
 export function ShipPlacement() {
-   const shipAmounts = {
+   const initialShipsToPlace = {
       carrier: 1,
       battleship: 1,
       cruiser: 1,
@@ -54,7 +54,7 @@ export function ShipPlacement() {
       coordinates: [],
    });
    const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
-   const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(shipAmounts);
+   const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(initialShipsToPlace);
    const { orientation, setOrientation, toggleOrientation } = useOrientation();
    const resetHoveredCells = useCallback(() => {
       setHoveredCells({ canPlace: false, coordinates: [] });
@@ -71,6 +71,12 @@ export function ShipPlacement() {
       setShipsToPlace(newShipsToPlace);
       setPlacedShips(newPlacedShips);
       setAllShipsCoordinates(getAllShipsCoordinates({ placedShips: newPlacedShips }));
+   }
+
+   function clearPlacedShips() {
+      setPlacedShips([]);
+      setShipsToPlace(initialShipsToPlace);
+      setAllShipsCoordinates(new Set());
    }
 
    function handleDragStart(e: DragStartEvent) {
@@ -220,7 +226,7 @@ export function ShipPlacement() {
             modifiers={[snapCenterToCursor]}
          >
             <div className="grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2">
-               <GameBoard
+               <ShipPlacementBoard
                   size={gameBoardSize}
                   hoveredCells={hoveredCells}
                   placedShips={placedShips}
@@ -238,7 +244,7 @@ export function ShipPlacement() {
                            )}
                         </Button>
                      </div>
-                     <Button>
+                     <Button onClick={clearPlacedShips}>
                         Reset <RefreshCwIcon />
                      </Button>
                   </div>

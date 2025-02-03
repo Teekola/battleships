@@ -7,7 +7,7 @@ import { DraggableShip } from "./draggable-ship";
 import { DroppableCell } from "./droppable-cell";
 import { ShipPiece } from "./ship-piece";
 
-export function GameBoard({
+export function ShipPlacementBoard({
    size,
    hoveredCells,
    placedShips,
