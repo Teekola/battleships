@@ -286,16 +286,24 @@ export function ShipPlacement() {
                      orientation={orientation}
                      draggingId={draggingId}
                   />
-                  <Button
-                     variant={isReady ? "green" : "default"}
-                     className={cn(isReady && "animate-pulse")}
-                     onClick={handleSetReady}
-                     data-disabled={!hasPlacedAllShips}
-                  >
-                     {isReady ? "Ready" : "Click here when ready"}
-                  </Button>
-                  {isReady && <p className="animate-pulse text-sm">Waiting for opponent...</p>}
-                  {message && <p className="text-sm text-red-500">{message}</p>}
+                  <footer className="sticky bottom-0 w-full pb-4 sm:static sm:pb-0">
+                     <div className="h-4 bg-gradient-to-t from-background via-background to-transparent sm:hidden"></div>
+
+                     <div className="flex h-full flex-col gap-2 bg-background">
+                        <Button
+                           variant={isReady ? "green" : "default"}
+                           className={cn("w-full", isReady && "animate-pulse")}
+                           onClick={handleSetReady}
+                           data-disabled={!hasPlacedAllShips}
+                        >
+                           {isReady ? "Ready" : "Click here when ready"}
+                        </Button>
+                        {isReady && (
+                           <p className="animate-pulse text-sm">Waiting for opponent...</p>
+                        )}
+                        {message && <p className="text-sm text-red-500">{message}</p>}
+                     </div>
+                  </footer>
                </section>
             </div>
 
