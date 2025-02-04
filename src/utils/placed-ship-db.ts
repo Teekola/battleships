@@ -1,5 +1,7 @@
 import { Prisma, ShipOrientation, ShipType } from "@prisma/client";
 
+import { ShipType as ShipTypeT } from "@/app/create-game/create-game-form-schema";
+import { ShipOrientation as ShipOrientationT } from "@/app/game/[gameId]/(utils)/types";
 import { PlacedShip } from "@/app/game/[gameId]/(utils)/types";
 import { prisma } from "@/lib/prisma";
 
@@ -15,7 +17,7 @@ const defaultPlacedShipArgs = Prisma.validator<Prisma.PlacedShipDefaultArgs>()({
    },
 });
 
-export type PlacedShipDBT = Prisma.GameGetPayload<typeof defaultPlacedShipArgs>;
+export type PlacedShipDBT = Prisma.PlacedShipGetPayload<typeof defaultPlacedShipArgs>;
 
 function lowerCaseShipTypeToDBShipType(lowerCase: string) {
    const map: Record<string, ShipType> = {
@@ -34,6 +36,16 @@ function lowerCaseOrientationToDBOrientation(lowerCase: string) {
       vertical: ShipOrientation.VERTICAL,
    };
    return map[lowerCase];
+}
+
+export function convertPlacedShipsDBTToPlacedShip(placedShipsDBT: PlacedShipDBT[]): PlacedShip[] {
+   return placedShipsDBT.map((ship) => ({
+      id: ship.id.toString(),
+      shipType: ship.shipType.toLowerCase() as ShipTypeT,
+      coordinates: { x: ship.x, y: ship.y },
+      size: ship.size,
+      orientation: ship.orientation.toLowerCase() as ShipOrientationT,
+   }));
 }
 
 export interface PlaceShipsArgs {

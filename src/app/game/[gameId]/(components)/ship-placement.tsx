@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import { Game } from "@/utils/game-db";
+import { PlacedShipDBT, convertPlacedShipsDBTToPlacedShip } from "@/utils/placed-ship-db";
 
 import { useClearSelectionOnRelease } from "../(hooks)/use-clear-selection-on-resize";
 import { useGame } from "../(hooks)/use-game";
@@ -45,9 +46,57 @@ function checkIfHasPlacedAllShips(shipsToPlace: ShipAmounts) {
    return Object.keys(shipsToPlace).every((key) => shipsToPlace[key as ShipType] < 1);
 }
 
-export function ShipPlacement({ initialGame }: Readonly<{ initialGame: Game }>) {
+function adjustShipsToPlace(
+   placedShips: PlacedShip[],
+   initialShipsToPlace: Record<string, number>
+): Record<string, number> {
+   // Count occurrences of each ship type in placedShips
+   const placedShipCounts = placedShips.reduce(
+      (acc, ship) => {
+         const key = ship.shipType.toLowerCase(); // Convert enum to lowercase to match `initialShipsToPlace`
+         acc[key] = (acc[key] || 0) + 1;
+         return acc;
+      },
+      {} as Record<string, number>
+   );
+
+   // Reduce counts in initialShipsToPlace
+   const updatedShipsToPlace = { ...initialShipsToPlace };
+
+   Object.keys(placedShipCounts).forEach((shipType) => {
+      if (updatedShipsToPlace[shipType] !== undefined) {
+         updatedShipsToPlace[shipType] = Math.max(
+            0,
+            updatedShipsToPlace[shipType] - placedShipCounts[shipType]
+         );
+      }
+   });
+
+   return updatedShipsToPlace;
+}
+
+export function ShipPlacement({
+   initialGame,
+   initialPlayer1PlacedShips,
+   initialPlayer2PlacedShips,
+}: Readonly<{
+   initialGame: Game;
+   initialPlayer1PlacedShips: PlacedShipDBT[];
+   initialPlayer2PlacedShips: PlacedShipDBT[];
+}>) {
    const { game, error } = useGame(initialGame);
    const { playerId } = usePlayer();
+
+   const id = useId();
+   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
+   const [draggingId, setDraggingId] = useState<string | null>(null);
+
+   const [placedShips, setPlacedShips] = useState<PlacedShip[]>(
+      convertPlacedShipsDBTToPlacedShip(
+         playerId === game.player1Id ? initialPlayer1PlacedShips : initialPlayer2PlacedShips
+      )
+   );
+
    const initialShipsToPlace = {
       carrier: game.carriers,
       battleship: game.battleships,
@@ -56,10 +105,8 @@ export function ShipPlacement({ initialGame }: Readonly<{ initialGame: Game }>) 
       destroyer: game.destroyers,
    };
 
-   const id = useId();
-   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
-   const [draggingId, setDraggingId] = useState<string | null>(null);
-   const [placedShips, setPlacedShips] = useState<PlacedShip[]>([]);
+   adjustShipsToPlace(placedShips, initialShipsToPlace);
+
    const [hoveredCells, setHoveredCells] = useState<HoveredCells>({
       canPlace: false,
       coordinates: [],

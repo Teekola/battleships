@@ -6,6 +6,7 @@ import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import { Game as GameT } from "@/utils/game-db";
 import { AllMovesByPlayerId } from "@/utils/move-db";
+import { PlacedShipDBT, convertPlacedShipsDBTToPlacedShip } from "@/utils/placed-ship-db";
 
 import { useGame } from "../(hooks)/use-game";
 import { useMoves } from "../(hooks)/use-moves";
@@ -18,13 +19,22 @@ import { OwnGameBoard } from "./own-game-board";
 export function Game({
    initialGame,
    initialMoves,
-}: Readonly<{ initialGame: GameT; initialMoves: AllMovesByPlayerId }>) {
+   initialPlayer1PlacedShips,
+   initialPlayer2PlacedShips,
+}: Readonly<{
+   initialGame: GameT;
+   initialMoves: AllMovesByPlayerId;
+   initialPlayer1PlacedShips: PlacedShipDBT[];
+   initialPlayer2PlacedShips: PlacedShipDBT[];
+}>) {
    const { game, currentTurn } = useGame(initialGame);
    const { ownMoves, opponentMoves, addMove } = useMoves({ initialMoves, initialGame });
 
    const { playerId } = usePlayer();
 
    const isPlayer1 = game.player1Id === playerId;
+   const ownShips = isPlayer1 ? initialPlayer1PlacedShips : initialPlayer2PlacedShips;
+   const opponentShips = isPlayer1 ? initialPlayer2PlacedShips : initialPlayer1PlacedShips;
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
    const [hasPlayed, setHasPlayed] = useState(false);
 
@@ -73,15 +83,7 @@ export function Game({
                   <OwnGameBoard
                      size={game.boardSize}
                      moves={opponentMoves}
-                     placedShips={[
-                        {
-                           coordinates: { x: 1, y: 1 },
-                           id: "carrier",
-                           shipType: "carrier",
-                           size: 5,
-                           orientation: "vertical",
-                        },
-                     ]}
+                     placedShips={convertPlacedShipsDBTToPlacedShip(ownShips)}
                   />
                </section>
                <section
@@ -94,15 +96,7 @@ export function Game({
                   <OpponentGameBoard
                      hitCoordinate={hitCoordinate}
                      size={game.boardSize}
-                     placedShips={[
-                        {
-                           coordinates: { x: 2, y: 3 },
-                           id: "submarine",
-                           shipType: "submarine",
-                           size: 3,
-                           orientation: "horizontal",
-                        },
-                     ]}
+                     placedShips={convertPlacedShipsDBTToPlacedShip(opponentShips)}
                      moves={ownMoves}
                   />
                </section>
