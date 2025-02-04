@@ -9,6 +9,8 @@ import { useGameStore } from "../(stores)/game-store-provider";
 
 export function useGame(initialGame: Readonly<Game>) {
    const game = useGameStore((s) => s.game) ?? initialGame;
+   const currentTurn = useGameStore((s) => s.currentTurn) ?? initialGame.currentTurn;
+   const setCurrentTurn = useGameStore((s) => s.setCurrentTurn);
    const setGame = useGameStore((s) => s.setGame);
 
    const [error, setError] = useState("");
@@ -26,7 +28,9 @@ export function useGame(initialGame: Readonly<Game>) {
             setError(error.message + " " + error.details);
             return;
          }
-         setGame({ ...data } as Game);
+         const game = { ...data } as Game;
+         setGame(game);
+         setCurrentTurn(game.currentTurn ?? "");
          setError("");
       };
 
@@ -41,7 +45,9 @@ export function useGame(initialGame: Readonly<Game>) {
                console.log("Game record changed:", payload);
 
                if (payload.eventType === "UPDATE") {
-                  setGame({ ...payload.new } as Game);
+                  const game = { ...payload.new } as Game;
+                  setGame(game);
+                  setCurrentTurn(game.currentTurn ?? "");
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
                   setError(`Game ${initialGame.id} has been deleted.`);
@@ -53,7 +59,7 @@ export function useGame(initialGame: Readonly<Game>) {
       return () => {
          supabase.removeChannel(channel);
       };
-   }, [initialGame.id, setGame]);
+   }, [initialGame.id, setGame, setCurrentTurn]);
 
-   return { game, error };
+   return { game, currentTurn, error };
 }

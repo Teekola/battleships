@@ -12,5 +12,7 @@ export default async function GamePage({
 
    if (!game) notFound();
 
-   return <GameClient initialGame={game} />;
+   const moves = await db.move.getAll({ gameId });
+
+   return <GameClient initialGame={game} initialMoves={moves} />;
 }

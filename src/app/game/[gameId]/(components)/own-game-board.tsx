@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { generateGameBoard } from "../(utils)/generate-game-board";
 import { placeHitsOnGameBoard } from "../(utils)/place-hits-on-game-board";
 import { placeShipsOnGameBoard } from "../(utils)/place-ships-on-game-board";
-import { Coordinates, Move, PlacedShip } from "../(utils)/types";
+import { Move, PlacedShip } from "../(utils)/types";
 import { HitOverlay } from "./hit-overlay";
 import { ShipPiece } from "./ship-piece";
 
@@ -15,7 +15,6 @@ export function OwnGameBoard({
    size: number;
    placedShips: PlacedShip[];
    moves: Move[];
-   handleOpponentHit: (coordinates: Coordinates) => void;
 }>) {
    const board = useMemo(() => {
       const gameBoard = generateGameBoard(size);

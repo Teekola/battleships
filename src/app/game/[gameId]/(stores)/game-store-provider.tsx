@@ -36,5 +36,5 @@ export function useGameStore<T>(selector: (store: GameStore) => T): T {
 }
 
 export function useGame() {
-   return useGameStore((state) => state);
+   return useGameStore((s) => s.game);
 }

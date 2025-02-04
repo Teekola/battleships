@@ -42,6 +42,11 @@ export interface PlaceShipsArgs {
    gameId: string;
 }
 
+export interface GetShipsArgs {
+   gameId: string;
+   playerId: string;
+}
+
 export class PlacedShipDB {
    constructor() {}
 
@@ -65,7 +70,7 @@ export class PlacedShipDB {
       ]);
    }
 
-   async getShips({ gameId, playerId }: { gameId: string; playerId: string }) {
+   async getShips({ gameId, playerId }: GetShipsArgs) {
       const ships = await prisma.placedShip.findMany({
          where: { gameId, playerId },
          select: defaultPlacedShipArgs.select,
