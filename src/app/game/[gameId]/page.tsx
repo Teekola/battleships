@@ -1,18 +1,20 @@
-"use client";
+import { notFound } from "next/navigation";
 
-import { useState } from "react";
+import { db } from "@/utils/db";
 
-import { Game } from "./(components)/game";
-import { ShipPlacement } from "./(components)/ship-placement";
+import { GameClient } from "./game-client";
 
-type GameState = "ship-placement" | "game";
+export default async function GamePage({
+   params,
+}: Readonly<{ params: Promise<{ gameId: string }> }>) {
+   const gameId = (await params).gameId;
+   const game = await db.game.getById(gameId);
 
-export default function GamePage() {
-   const [gameState] = useState<GameState>("game");
+   if (!game) notFound();
+
    return (
       <>
-         {gameState === "ship-placement" && <ShipPlacement />}
-         {gameState === "game" && <Game />}
+         <GameClient initialGame={game} />
       </>
    );
 }
