@@ -21,9 +21,12 @@ import { ArrowLeftRightIcon, ArrowUpDownIcon, RefreshCwIcon } from "lucide-react
 import { ShipType, shipSizes } from "@/app/create-game/create-game-form-schema";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Game } from "@/utils/db";
 
 import { useClearSelectionOnRelease } from "../(hooks)/use-clear-selection-on-resize";
+import { useGame } from "../(hooks)/use-game";
 import { useOrientation } from "../(hooks)/use-orientation";
+import { usePlayersReadyState } from "../(hooks)/use-players-ready-state";
 import { getAllShipsCoordinates } from "../(utils)/get-all-ships-coordinates";
 import {
    HoveredCell,
@@ -40,15 +43,15 @@ function checkIfHasPlacedAllShips(shipsToPlace: ShipAmounts) {
    return Object.keys(shipsToPlace).every((key) => shipsToPlace[key as ShipType] < 1);
 }
 
-export function ShipPlacement() {
+export function ShipPlacement({ initialGame }: Readonly<{ initialGame: Game }>) {
+   const { game, error } = useGame(initialGame);
    const initialShipsToPlace = {
-      carrier: 1,
-      battleship: 1,
-      cruiser: 1,
-      submarine: 1,
-      destroyer: 2,
+      carrier: game.carriers,
+      battleship: game.battleships,
+      cruiser: game.cruisers,
+      submarine: game.submarines,
+      destroyer: game.destroyers,
    };
-   const gameBoardSize = 6;
 
    const id = useId();
    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
@@ -61,11 +64,12 @@ export function ShipPlacement() {
    const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
    const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(initialShipsToPlace);
    const { orientation, setOrientation, toggleOrientation } = useOrientation();
-   const [isReady, setReady] = useState(false);
    const [message, setMessage] = useState("");
    const resetHoveredCells = useCallback(() => {
       setHoveredCells({ canPlace: false, coordinates: [] });
    }, []);
+
+   const { isReady, isOpponentReady, updateIsReady } = usePlayersReadyState(initialGame);
 
    useClearSelectionOnRelease({ draggingId, resetHoveredCells });
 
@@ -78,14 +82,18 @@ export function ShipPlacement() {
       setShipsToPlace(newShipsToPlace);
       setPlacedShips(newPlacedShips);
       setAllShipsCoordinates(getAllShipsCoordinates({ placedShips: newPlacedShips }));
-      setReady(false);
+      if (isReady) {
+         updateIsReady(false);
+      }
    }
 
    function clearPlacedShips() {
       setPlacedShips([]);
       setShipsToPlace(initialShipsToPlace);
       setAllShipsCoordinates(new Set());
-      setReady(false);
+      if (isReady) {
+         updateIsReady(false);
+      }
    }
 
    function handleDragStart(e: DragStartEvent) {
@@ -174,7 +182,7 @@ export function ShipPlacement() {
             const currentX = isHorizontal ? x + i : x;
             const currentY = isHorizontal ? y : y + i;
 
-            if (currentX >= gameBoardSize || currentY >= gameBoardSize) {
+            if (currentX >= game.boardSize || currentY >= game.boardSize) {
                canPlace = false;
                break;
             }
@@ -198,7 +206,7 @@ export function ShipPlacement() {
 
          setHoveredCells({ canPlace, coordinates: hoveredCells });
       },
-      [allShipsCoordinates, draggingId, resetHoveredCells]
+      [allShipsCoordinates, draggingId, resetHoveredCells, game.boardSize]
    );
 
    const handleDragMove = useMemo(() => {
@@ -228,13 +236,17 @@ export function ShipPlacement() {
 
    function handleSetReady() {
       if (hasPlacedAllShips) {
-         setReady((prev) => !prev);
+         updateIsReady(!isReady);
          return;
       }
       setMessage("Place all ships first!");
    }
 
    useEffect(() => () => handleDragMove.cancel(), [handleDragMove]);
+
+   if (error) {
+      return <p>{error}</p>;
+   }
 
    return (
       <div className="p-4">
@@ -251,7 +263,7 @@ export function ShipPlacement() {
          >
             <div className="grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-[minmax(0,_3fr),minmax(0,_2fr)]">
                <ShipPlacementBoard
-                  size={gameBoardSize}
+                  size={game.boardSize}
                   hoveredCells={hoveredCells}
                   placedShips={placedShips}
                />
@@ -298,10 +310,12 @@ export function ShipPlacement() {
                         >
                            {isReady ? "Ready" : "Click here when ready"}
                         </Button>
-                        {isReady && (
+                        {message && <p className="text-sm text-red-500">{message}</p>}
+                        {isOpponentReady ? (
+                           <p className="text-sm">Opponent is ready!</p>
+                        ) : (
                            <p className="animate-pulse text-sm">Waiting for opponent...</p>
                         )}
-                        {message && <p className="text-sm text-red-500">{message}</p>}
                      </div>
                   </footer>
                </section>

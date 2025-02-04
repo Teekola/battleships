@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 
+import { GameStoreProvider } from "./game/[gameId]/(stores)/game-store-provider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,7 +24,7 @@ export default function RootLayout({
          <body
             className={`${geistSans.variable} h-screen min-h-screen bg-background font-sans antialiased`}
          >
-            {children}
+            <GameStoreProvider>{children}</GameStoreProvider>
          </body>
       </html>
    );

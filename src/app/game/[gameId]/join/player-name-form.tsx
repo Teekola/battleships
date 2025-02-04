@@ -31,9 +31,6 @@ export function PlayerNameForm({
    const { game, error } = useGame(initialGame);
 
    async function onSubmit(data: PlayerNameFormData) {
-      console.log(data);
-      //  Check if there is already a player, if so, go directly to the game start stage!
-
       if (!game.player1Name) {
          await updateGame({
             gameId,
@@ -46,13 +43,14 @@ export function PlayerNameForm({
          return;
       }
 
-      await updateGame({
+      const updatedGame = await updateGame({
          gameId,
          playerName: data.name,
          playerId,
          isPlayer1: false,
          state: GameState.SHIP_PLACEMENT,
       });
+      console.log(updatedGame);
       router.push(`/game/${gameId}`);
    }
 

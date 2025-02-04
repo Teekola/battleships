@@ -12,8 +12,10 @@ model Game {
    id            String         @id
    player1Id     String?
    player1Name   String?
+   player1Ready  Boolean?
    player2Id     String?
    player2Name   String?
+   player2Ready  Boolean?
    state         GameState
    gameEndReason GameEndReason?
    boardSize     Int

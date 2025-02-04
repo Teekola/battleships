@@ -10,6 +10,8 @@ const defaultGameArgs = Prisma.validator<Prisma.GameDefaultArgs>()({
       player2Id: true,
       player1Name: true,
       player2Name: true,
+      player1Ready: true,
+      player2Ready: true,
       state: true,
       boardSize: true,
       carriers: true,
@@ -46,18 +48,29 @@ class GameDB {
       return game;
    }
 
-   async update({ gameId, playerName, playerId, isPlayer1, ...rest }: UpdateGameArgs) {
+   async update({ gameId, playerName, playerId, playerReady, isPlayer1, ...rest }: UpdateGameArgs) {
       const game = await prisma.game.update({
          where: {
             id: gameId,
          },
          data: {
             ...(isPlayer1
-               ? { player1Name: playerName, player1Id: playerId, ...rest }
-               : { player2Name: playerName, player2Id: playerId, ...rest }),
+               ? {
+                    ...(playerName && { player1Name: playerName }),
+                    ...(playerId && { player1Id: playerId }),
+                    player1Ready: playerReady ?? false,
+                    ...rest,
+                 }
+               : {
+                    ...(playerName && { player2Name: playerName }),
+                    ...(playerId && { player2Id: playerId }),
+                    player2Ready: playerReady ?? false,
+                    ...rest,
+                 }),
          },
          select: defaultGameArgs.select,
       });
+      console.log(game);
       return game;
    }
 }
@@ -101,6 +114,7 @@ export interface UpdateGameArgs {
    playerName?: string;
    playerId?: string;
    isPlayer1?: boolean;
+   playerReady?: boolean;
    state?: GameState;
    gameEndReason?: GameEndReason;
    boardSize?: number;

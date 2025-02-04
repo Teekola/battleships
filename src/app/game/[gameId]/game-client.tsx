@@ -17,7 +17,7 @@ export function GameClient({ initialGame }: Readonly<{ initialGame: GameT }>) {
 
    return (
       <>
-         {game.state === GameState.SHIP_PLACEMENT && <ShipPlacement />}
+         {game.state === GameState.SHIP_PLACEMENT && <ShipPlacement initialGame={game} />}
          {game.state === GameState.PLAYING && <Game />}
       </>
    );

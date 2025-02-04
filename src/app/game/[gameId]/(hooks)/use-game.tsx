@@ -5,8 +5,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Game } from "@/utils/db";
 
+import { useGameStore } from "../(stores)/game-store-provider";
+
 export function useGame(initialGame: Readonly<Game>) {
-   const [game, setGame] = useState(initialGame);
+   const game = useGameStore((s) => s.game) ?? initialGame;
+   const setGame = useGameStore((s) => s.setGame);
+
    const [error, setError] = useState("");
 
    useEffect(() => {
@@ -22,7 +26,7 @@ export function useGame(initialGame: Readonly<Game>) {
             setError(error.message + " " + error.details);
             return;
          }
-         setGame(data as Game);
+         setGame({ ...data } as Game);
          setError("");
       };
 
@@ -37,7 +41,7 @@ export function useGame(initialGame: Readonly<Game>) {
                console.log("Game record changed:", payload);
 
                if (payload.eventType === "UPDATE") {
-                  setGame(payload.new as Game);
+                  setGame({ ...payload.new } as Game);
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
                   setError(`Game ${initialGame.id} has been deleted.`);
@@ -49,7 +53,7 @@ export function useGame(initialGame: Readonly<Game>) {
       return () => {
          supabase.removeChannel(channel);
       };
-   }, [initialGame.id]);
+   }, [initialGame.id, setGame]);
 
    return { game, error };
 }
