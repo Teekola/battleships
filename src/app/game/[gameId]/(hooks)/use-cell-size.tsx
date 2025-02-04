@@ -10,7 +10,6 @@ export function useCellSize() {
          debounce(
             () => {
                const dataCell = document.querySelector('[data-cell="true"]');
-               console.log(dataCell?.getClientRects()[0]?.width);
                if (dataCell) {
                   setCellSize(dataCell.getClientRects()[0]?.width);
                }
