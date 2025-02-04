@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { usePlayer } from "@/hooks/use-player";
-import { Game } from "@/utils/db";
+import { Game } from "@/utils/game-db";
 
+import { startGame } from "../(components)/actions";
 import { updateGame } from "../join/actions";
 import { useGame } from "./use-game";
 
@@ -51,5 +52,12 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
       },
       [game.id, isPlayer1]
    );
+
+   useEffect(() => {
+      if (isReady && isOpponentReady && game.player1Id && game.player2Id) {
+         startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
+      }
+   }, [isReady, isOpponentReady, game.id, game.player1Id, game.player2Id]);
+
    return { error, isReady, isOpponentReady, updateIsReady };
 }

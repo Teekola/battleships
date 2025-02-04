@@ -1,6 +1,6 @@
 "use client";
 
-import { Game } from "@/utils/db";
+import { Game } from "@/utils/game-db";
 
 import { useRedirectToGame } from "./use-redirect-to-game";
 

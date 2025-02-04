@@ -16,6 +16,7 @@ model Game {
    player2Id     String?
    player2Name   String?
    player2Ready  Boolean?
+   currentTurn   String?
    state         GameState
    gameEndReason GameEndReason?
    boardSize     Int
@@ -26,6 +27,8 @@ model Game {
    destroyers    Int
    createdAt     DateTime       @default(now())
    updatedAt     DateTime       @updatedAt
+   PlacedShip    PlacedShip[]
+   Move          Move[]
 }
 
 enum GameState {
@@ -39,4 +42,41 @@ enum GameEndReason {
    WIN
    TIE
    TIMEOUT
+}
+
+model PlacedShip {
+   id          Int             @id @default(autoincrement())
+   game        Game            @relation(fields: [gameId], references: [id])
+   gameId      String
+   playerId    String
+   shipType    ShipType
+   x           Int
+   y           Int
+   size        Int
+   orientation ShipOrientation
+
+   @@unique([gameId, playerId, x, y])
+}
+
+model Move {
+   id        Int      @id @default(autoincrement())
+   game      Game     @relation(fields: [gameId], references: [id])
+   gameId    String
+   playerId  String
+   x         Int
+   y         Int
+   createdAt DateTime @default(now())
+}
+
+enum ShipType {
+   CARRIER
+   BATTLESHIP
+   CRUISER
+   SUBMARINE
+   DESTROYER
+}
+
+enum ShipOrientation {
+   HORIZONTAL
+   VERTICAL
 }

@@ -20,8 +20,9 @@ import { ArrowLeftRightIcon, ArrowUpDownIcon, RefreshCwIcon } from "lucide-react
 
 import { ShipType, shipSizes } from "@/app/create-game/create-game-form-schema";
 import { Button } from "@/components/ui/button";
+import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
-import { Game } from "@/utils/db";
+import { Game } from "@/utils/game-db";
 
 import { useClearSelectionOnRelease } from "../(hooks)/use-clear-selection-on-resize";
 import { useGame } from "../(hooks)/use-game";
@@ -35,6 +36,7 @@ import {
    ShipAmounts,
    ShipOrientation,
 } from "../(utils)/types";
+import { placeShips } from "./actions";
 import { Ship } from "./ship";
 import { ShipCatalogue } from "./ship-catalogue";
 import { ShipPlacementBoard } from "./ship-placement-board";
@@ -45,6 +47,7 @@ function checkIfHasPlacedAllShips(shipsToPlace: ShipAmounts) {
 
 export function ShipPlacement({ initialGame }: Readonly<{ initialGame: Game }>) {
    const { game, error } = useGame(initialGame);
+   const { playerId } = usePlayer();
    const initialShipsToPlace = {
       carrier: game.carriers,
       battleship: game.battleships,
@@ -234,11 +237,18 @@ export function ShipPlacement({ initialGame }: Readonly<{ initialGame: Game }>) 
 
    const hasPlacedAllShips = checkIfHasPlacedAllShips(shipsToPlace);
 
-   function handleSetReady() {
-      if (hasPlacedAllShips) {
-         updateIsReady(!isReady);
+   async function handleSetReady() {
+      if (hasPlacedAllShips && !isReady) {
+         updateIsReady(true);
+         await placeShips({ placedShips, playerId, gameId: game.id });
          return;
       }
+
+      if (hasPlacedAllShips && isReady) {
+         updateIsReady(false);
+         return;
+      }
+
       setMessage("Place all ships first!");
    }
 

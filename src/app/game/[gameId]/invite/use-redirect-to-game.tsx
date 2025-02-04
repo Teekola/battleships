@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { Game } from "@/utils/db";
+import { Game } from "@/utils/game-db";
 
 import { useGame } from "../(hooks)/use-game";
 

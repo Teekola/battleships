@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { supabase } from "@/lib/supabase";
-import { Game } from "@/utils/db";
+import { Game } from "@/utils/game-db";
 
 import { useGameStore } from "../(stores)/game-store-provider";
 

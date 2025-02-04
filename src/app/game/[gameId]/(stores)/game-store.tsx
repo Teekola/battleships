@@ -1,6 +1,6 @@
 import { createStore } from "zustand/vanilla";
 
-import { Game } from "@/utils/db";
+import { Game } from "@/utils/game-db";
 
 export type GameStoreState = {
    game: Game | null;

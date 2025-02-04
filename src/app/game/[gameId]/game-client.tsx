@@ -2,7 +2,7 @@
 
 import { GameState } from "@prisma/client";
 
-import { Game as GameT } from "@/utils/db";
+import { Game as GameT } from "@/utils/game-db";
 
 import { Game } from "./(components)/game";
 import { ShipPlacement } from "./(components)/ship-placement";

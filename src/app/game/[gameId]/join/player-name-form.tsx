@@ -10,7 +10,7 @@ import { usePlayer } from "@/hooks/use-player";
 import { Button } from "@/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/ui/form";
 import { Input } from "@/ui/input";
-import { Game } from "@/utils/db";
+import { Game } from "@/utils/game-db";
 
 import { useGame } from "../(hooks)/use-game";
 import { updateGame } from "./actions";
