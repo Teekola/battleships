@@ -1,22 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
-
-import { useRouter } from "next/navigation";
-
 import { Game } from "@/utils/db";
 
-import { useGame } from "../(hooks)/use-game";
+import { useRedirectToGame } from "./use-redirect-to-game";
 
 export function WaitingForPlayer({ initialGame }: Readonly<{ initialGame: Game }>) {
-   const { error, game } = useGame(initialGame);
-   const router = useRouter();
-
-   useEffect(() => {
-      if (game.player1Name && game.player2Name) {
-         router.push(`/game/${game.id}`);
-      }
-   }, [game, router]);
+   const { error } = useRedirectToGame(initialGame);
 
    if (error) {
       return <p className="text-sm text-red-500">{error}</p>;
