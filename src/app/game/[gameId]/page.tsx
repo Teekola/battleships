@@ -12,9 +12,5 @@ export default async function GamePage({
 
    if (!game) notFound();
 
-   return (
-      <>
-         <GameClient initialGame={game} />
-      </>
-   );
+   return <GameClient initialGame={game} />;
 }
