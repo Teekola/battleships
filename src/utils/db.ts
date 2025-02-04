@@ -1,10 +1,11 @@
-import { GameState, Prisma } from "@prisma/client";
+import { GameEndReason, GameState, Prisma } from "@prisma/client";
 
 import { generateGameId } from "@/app/create-game/generate-game-id";
 import { prisma } from "@/lib/prisma";
 
 const defaultGameArgs = Prisma.validator<Prisma.GameDefaultArgs>()({
    select: {
+      id: true,
       player1Id: true,
       player2Id: true,
       player1Name: true,
@@ -45,15 +46,15 @@ class GameDB {
       return game;
    }
 
-   async updatePlayer({ gameId, name, playerId, isPlayer1 }: UpdatePlayerArgs) {
+   async update({ gameId, playerName, playerId, isPlayer1, ...rest }: UpdateGameArgs) {
       const game = await prisma.game.update({
          where: {
             id: gameId,
          },
          data: {
             ...(isPlayer1
-               ? { player1Name: name, player1Id: playerId }
-               : { player2Name: name, player2Id: playerId }),
+               ? { player1Name: playerName, player1Id: playerId, ...rest }
+               : { player2Name: playerName, player2Id: playerId, ...rest }),
          },
          select: defaultGameArgs.select,
       });
@@ -95,9 +96,18 @@ export interface CreateGameArgs {
    destroyers: number;
 }
 
-export interface UpdatePlayerArgs {
+export interface UpdateGameArgs {
    gameId: string;
-   name: string;
-   playerId: string;
-   isPlayer1: boolean;
+   playerName?: string;
+   playerId?: string;
+   isPlayer1?: boolean;
+   state?: GameState;
+   gameEndReason?: GameEndReason;
+   boardSize?: number;
+   player1Id?: string;
+   carriers?: number;
+   battleships?: number;
+   cruisers?: number;
+   submarines?: number;
+   destroyers?: number;
 }

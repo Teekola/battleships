@@ -1,7 +1,7 @@
 "use server";
 
-import { UpdatePlayerArgs, db } from "@/utils/db";
+import { UpdateGameArgs, db } from "@/utils/db";
 
-export async function updatePlayer(data: UpdatePlayerArgs) {
-   await db.game.updatePlayer(data);
+export async function updateGame(data: UpdateGameArgs) {
+   await db.game.update(data);
 }
