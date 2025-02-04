@@ -46,7 +46,7 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
             isPlayer1,
             isReady: isReadyState,
          });
-         console.log(shouldBeReady);
+
          setIsReady(shouldBeReady);
       },
       [game.id, isPlayer1]
