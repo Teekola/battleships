@@ -2,52 +2,55 @@
 
 import { useEffect, useState } from "react";
 
+import { GameState } from "@prisma/client";
+
 import { usePlayer } from "@/hooks/use-player";
 import { supabase } from "@/lib/supabase";
 import { Game } from "@/utils/game-db";
 import { AllMovesByPlayerId, MoveDBT, movesToMovesByPlayerId } from "@/utils/move-db";
 
 import { useGameStore } from "../(stores)/game-store-provider";
+import { checkGameEnd } from "../(utils)/check-game-end";
 
 export function useMoves({
    initialMoves,
    initialGame,
 }: Readonly<{ initialMoves: AllMovesByPlayerId; initialGame: Game }>) {
    const game = useGameStore((s) => s.game) ?? initialGame;
-   const { playerId } = usePlayer();
+   const { playerId, hasHydrated } = usePlayer();
    const isPlayer1 = game.player1Id === playerId;
-   const opponentId = isPlayer1 ? game.player2Id : game.player1Id;
-   const player1Moves = useGameStore((s) => s.player1Moves);
-   const player2Moves = useGameStore((s) => s.player2Moves);
+   const opponentId = (isPlayer1 ? game.player2Id : game.player1Id)!;
+   const ownMovesStored = useGameStore((s) => s.ownMoves);
+   const opponentMovesStored = useGameStore((s) => s.opponentMoves);
 
    const initialPlayer1Moves = initialMoves[game.player1Id!] ?? [];
    const initialPlayer2Moves = initialMoves[game.player2Id!] ?? [];
 
-   const ownMoves = isPlayer1
-      ? player1Moves.length > 0
-         ? player1Moves
-         : initialPlayer1Moves
-      : player2Moves.length > 0
-        ? player2Moves
-        : initialPlayer2Moves;
-   const opponentMoves = isPlayer1
-      ? player2Moves.length > 0
-         ? player2Moves
-         : initialPlayer2Moves
-      : player1Moves.length > 0
-        ? player1Moves
-        : initialPlayer1Moves;
+   const ownMoves =
+      ownMovesStored.length > 0
+         ? ownMovesStored
+         : isPlayer1
+           ? initialPlayer1Moves
+           : initialPlayer2Moves;
+
+   const opponentMoves =
+      opponentMovesStored.length > 0
+         ? opponentMovesStored
+         : isPlayer1
+           ? initialPlayer2Moves
+           : initialPlayer1Moves;
 
    const addMove = useGameStore((s) => s.addMove);
-   const addMove2 = useGameStore((s) => s.addMove2);
-   const setPlayer1Moves = useGameStore((s) => s.setPlayer1Moves);
-   const setPlayer2Moves = useGameStore((s) => s.setPlayer2Moves);
    const setOwnMoves = useGameStore((s) => s.setOwnMoves);
    const setOpponentMoves = useGameStore((s) => s.setOpponentMoves);
+   const setGameEndReason = useGameStore((s) => s.setGameEndReason);
+   const setWinnerId = useGameStore((s) => s.setWinnerId);
 
    const [error, setError] = useState("");
 
    useEffect(() => {
+      if (!hasHydrated) return;
+
       const fetchGame = async () => {
          const { data, error } = await supabase
             .from("Move")
@@ -62,13 +65,14 @@ export function useMoves({
          }
          const moves = [...data] as MoveDBT[];
          const movesByPlayerId = movesToMovesByPlayerId(moves);
-
-         const player1Moves = movesByPlayerId[game.player1Id!] ?? [];
-         const player2Moves = movesByPlayerId[game.player2Id!] ?? [];
-         setPlayer1Moves(player1Moves);
-         setPlayer2Moves(player2Moves);
-         setOwnMoves(isPlayer1 ? player1Moves : player2Moves);
-         setOpponentMoves(isPlayer1 ? player2Moves : player1Moves);
+         const player1Id = isPlayer1 ? playerId : opponentId;
+         const player2Id = isPlayer1 ? opponentId : playerId;
+         const player1Moves = movesByPlayerId[player1Id] ?? [];
+         const player2Moves = movesByPlayerId[player2Id] ?? [];
+         const newOwnMoves = isPlayer1 ? player1Moves : player2Moves;
+         const newOpponentMoves = isPlayer1 ? player2Moves : player1Moves;
+         setOwnMoves(newOwnMoves);
+         setOpponentMoves(newOpponentMoves);
          setError("");
       };
 
@@ -79,14 +83,36 @@ export function useMoves({
          .on(
             "postgres_changes",
             { event: "*", schema: "public", table: "Move", filter: `gameId=eq.${initialGame.id}` },
-            (payload) => {
+            async (payload) => {
                console.log("Move record changed:", payload);
 
                if (payload.eventType === "INSERT") {
                   const move = { ...payload.new } as MoveDBT;
                   if (move.playerId !== playerId) {
-                     addMove({ ...move, isPlayer1: opponentId === game.player1Id });
-                     addMove2({ ...move, isOwnMove: false });
+                     const {
+                        ownMoves: newOwnMoves,
+                        opponentMoves: newOpponentMoves,
+                        ownHitsRemaining: newOwnHitsRemaining,
+                        opponentHitsRemaining: newOpponentHitsRemaining,
+                     } = addMove({
+                        ...move,
+                        isOwnMove: false,
+                     });
+
+                     const { gameEndReason, winnerId, gameState } = await checkGameEnd({
+                        ownHitsRemaining: newOwnHitsRemaining ?? 2,
+                        opponentHitsRemaining: newOpponentHitsRemaining ?? 2,
+                        gameId: initialGame.id,
+                        opponentId,
+                        playerId,
+                        ownMoves: newOwnMoves,
+                        opponentMoves: newOpponentMoves,
+                     });
+                     if (gameState === GameState.FINISHED) {
+                        setGameEndReason(gameEndReason);
+                        if (winnerId) setWinnerId(winnerId);
+                        return;
+                     }
                   }
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
@@ -100,19 +126,17 @@ export function useMoves({
          supabase.removeChannel(channel);
       };
    }, [
+      hasHydrated,
       initialGame.id,
-      addMove,
       playerId,
-      isPlayer1,
-      game.player1Id,
-      game.player2Id,
-      setPlayer1Moves,
-      setPlayer2Moves,
       opponentId,
+      isPlayer1,
       setOwnMoves,
       setOpponentMoves,
-      addMove2,
+      addMove,
+      setGameEndReason,
+      setWinnerId,
    ]);
 
-   return { opponentMoves, ownMoves, error, addMove, addMove2 };
+   return { opponentMoves, ownMoves, error, addMove, hasHydrated };
 }

@@ -7,8 +7,6 @@ import { MoveDBT } from "@/utils/move-db";
 export type GameStoreState = {
    game: Game | null;
    currentTurn: string;
-   player1Moves: MoveDBT[];
-   player2Moves: MoveDBT[];
    ownMoves: MoveDBT[];
    opponentMoves: MoveDBT[];
    winnerId?: string;
@@ -28,26 +26,9 @@ export type GameStoreActions = {
    setOpponentHitsRemaining: (n: number) => void;
    setWinnerId: (s: string) => void;
    setGameEndReason: (r: GameEndReason) => void;
-   setPlayer1Moves: (moves: MoveDBT[]) => void;
-   setPlayer2Moves: (moves: MoveDBT[]) => void;
    setOwnMoves: (moves: MoveDBT[]) => void;
    setOpponentMoves: (moves: MoveDBT[]) => void;
    addMove: ({
-      id,
-      gameId,
-      playerId,
-      isPlayer1,
-      x,
-      y,
-   }: {
-      id: number;
-      gameId: string;
-      playerId: string;
-      isPlayer1: boolean;
-      x: number;
-      y: number;
-   }) => void;
-   addMove2: ({
       id,
       gameId,
       playerId,
@@ -61,7 +42,12 @@ export type GameStoreActions = {
       isOwnMove: boolean;
       x: number;
       y: number;
-   }) => void;
+   }) => {
+      ownMoves: MoveDBT[];
+      opponentMoves: MoveDBT[];
+      ownHitsRemaining?: number;
+      opponentHitsRemaining?: number;
+   };
 };
 
 export type GameStore = GameStoreState & GameStoreActions;
@@ -69,14 +55,12 @@ export type GameStore = GameStoreState & GameStoreActions;
 export const defaultInitState: GameStoreState = {
    game: null,
    currentTurn: "",
-   player1Moves: [],
-   player2Moves: [],
    ownMoves: [],
    opponentMoves: [],
 };
 
 export function createGameStore(initState: GameStoreState = defaultInitState) {
-   return createStore<GameStore>((set) => ({
+   return createStore<GameStore>((set, get) => ({
       ...initState,
       setGame: (g) => set((state) => ({ ...state, game: g })),
       setCurrentTurn: (playerId) => set((state) => ({ ...state, currentTurn: playerId })),
@@ -86,22 +70,9 @@ export function createGameStore(initState: GameStoreState = defaultInitState) {
       setOpponentShipsRemaining: (n) => set((state) => ({ ...state, opponentShipsRemaining: n })),
       setWinnerId: (s) => set((state) => ({ ...state, winnerId: s })),
       setGameEndReason: (r) => set((state) => ({ ...state, gameEndReason: r })),
-      setPlayer1Moves: (moves) => set((state) => ({ ...state, player1Moves: moves })),
-      setPlayer2Moves: (moves) => set((state) => ({ ...state, player2Moves: moves })),
       setOwnMoves: (moves) => set((state) => ({ ...state, ownMoves: moves })),
       setOpponentMoves: (moves) => set((state) => ({ ...state, opponentMoves: moves })),
-      addMove: ({ id, gameId, playerId, isPlayer1, x, y }) =>
-         set((state) => {
-            const updatedMoves = (isPlayer1 ? state.player1Moves : state.player2Moves)?.concat([
-               { id, gameId, playerId, x, y },
-            ]) ?? [{ id, gameId, playerId, x, y }];
-
-            return {
-               ...state,
-               ...(isPlayer1 ? { player1Moves: updatedMoves } : { player2Moves: updatedMoves }),
-            };
-         }),
-      addMove2: ({ id, gameId, playerId, isOwnMove, x, y }) =>
+      addMove: ({ id, gameId, playerId, isOwnMove, x, y }) => {
          set((state) => {
             const updatedMoves = (isOwnMove ? state.ownMoves : state.opponentMoves)?.concat([
                { id, gameId, playerId, x, y },
@@ -111,6 +82,11 @@ export function createGameStore(initState: GameStoreState = defaultInitState) {
                ...state,
                ...(isOwnMove ? { ownMoves: updatedMoves } : { opponentMoves: updatedMoves }),
             };
-         }),
+         });
+
+         const { ownMoves, opponentMoves, ownHitsRemaining, opponentHitsRemaining } = get();
+
+         return { ownMoves, opponentMoves, ownHitsRemaining, opponentHitsRemaining };
+      },
    }));
 }
