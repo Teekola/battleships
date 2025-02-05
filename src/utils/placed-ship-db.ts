@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 const defaultPlacedShipArgs = Prisma.validator<Prisma.PlacedShipDefaultArgs>()({
    select: {
       id: true,
+      shipId: true,
       playerId: true,
       shipType: true,
       x: true,
@@ -40,7 +41,8 @@ function lowerCaseOrientationToDBOrientation(lowerCase: string) {
 
 export function convertPlacedShipsDBTToPlacedShip(placedShipsDBT: PlacedShipDBT[]): PlacedShip[] {
    return placedShipsDBT.map((ship) => ({
-      id: ship.id.toString(),
+      id: ship.id,
+      shipId: ship.shipId,
       shipType: ship.shipType.toLowerCase() as ShipTypeT,
       coordinates: { x: ship.x, y: ship.y },
       size: ship.size,
@@ -50,6 +52,12 @@ export function convertPlacedShipsDBTToPlacedShip(placedShipsDBT: PlacedShipDBT[
 
 export interface PlaceShipsArgs {
    placedShips: PlacedShip[];
+   playerId: string;
+   gameId: string;
+}
+
+export interface RemoveShipsArgs {
+   ids?: number[];
    playerId: string;
    gameId: string;
 }
@@ -70,6 +78,7 @@ export class PlacedShipDB {
          }),
          prisma.placedShip.createMany({
             data: placedShips.map((ship) => ({
+               shipId: ship.shipId,
                gameId,
                playerId,
                shipType: lowerCaseShipTypeToDBShipType(ship.shipType),
@@ -80,6 +89,12 @@ export class PlacedShipDB {
             })),
          }),
       ]);
+   }
+
+   async removePlayersShips({ playerId, gameId, ids }: RemoveShipsArgs) {
+      await prisma.placedShip.deleteMany({
+         where: { gameId, playerId, ...(ids && { id: { in: ids.map(Number) } }) },
+      });
    }
 
    async getShips({ gameId, playerId }: GetShipsArgs) {

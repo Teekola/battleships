@@ -45,7 +45,7 @@ export function ShipPlacementBoard({
                      <DraggableShip
                         size={cell.shipSize}
                         orientation={cell.shipOrientation}
-                        id={cell.shipId}
+                        shipId={cell.shipId}
                      >
                         <ShipPiece shipPiece={cell.shipPiece} orientation={cell.shipOrientation} />
                      </DraggableShip>

@@ -8,18 +8,18 @@ import { cn } from "@/lib/utils";
 interface DraggableShipProps extends ComponentProps<"button"> {
    size: number;
    orientation: "horizontal" | "vertical";
-   id?: string;
+   shipId?: string;
 }
 
 export function DraggableShip({
    children,
    size,
    orientation,
-   id,
+   shipId,
    ...props
 }: Readonly<PropsWithChildren<DraggableShipProps>>) {
    const uniqueId = useId();
-   const draggableId = id ?? uniqueId;
+   const draggableId = shipId ?? uniqueId;
    const { attributes, listeners, setNodeRef, transform } = useDraggable({
       id: draggableId,
       data: { size, orientation },

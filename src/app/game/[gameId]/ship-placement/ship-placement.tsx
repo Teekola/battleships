@@ -38,7 +38,7 @@ import {
    ShipAmounts,
    ShipOrientation,
 } from "../(utils)/types";
-import { placeShips } from "../actions";
+import { placeShips, removePlayersShips } from "../actions";
 import { ShipCatalogue } from "./ship-catalogue";
 import { ShipPlacementBoard } from "./ship-placement-board";
 
@@ -48,31 +48,23 @@ function checkIfHasPlacedAllShips(shipsToPlace: ShipAmounts) {
 
 function adjustShipsToPlace(
    placedShips: PlacedShip[],
-   initialShipsToPlace: Record<string, number>
-): Record<string, number> {
+   initialShipsToPlace: ShipAmounts
+): ShipAmounts {
    // Count occurrences of each ship type in placedShips
-   const placedShipCounts = placedShips.reduce(
-      (acc, ship) => {
-         const key = ship.shipType.toLowerCase(); // Convert enum to lowercase to match `initialShipsToPlace`
-         acc[key] = (acc[key] || 0) + 1;
-         return acc;
-      },
-      {} as Record<string, number>
+   const placedShipCounts = placedShips.reduce<Record<ShipType, number>>(
+      (acc, { shipType }) => ({
+         ...acc,
+         [shipType]: (acc[shipType] || 0) + 1,
+      }),
+      {} as Record<ShipType, number>
    );
 
-   // Reduce counts in initialShipsToPlace
-   const updatedShipsToPlace = { ...initialShipsToPlace };
-
-   Object.keys(placedShipCounts).forEach((shipType) => {
-      if (updatedShipsToPlace[shipType] !== undefined) {
-         updatedShipsToPlace[shipType] = Math.max(
-            0,
-            updatedShipsToPlace[shipType] - placedShipCounts[shipType]
-         );
-      }
-   });
-
-   return updatedShipsToPlace;
+   return Object.fromEntries(
+      Object.entries(initialShipsToPlace).map(([shipType, count]) => [
+         shipType,
+         Math.max(0, count - (placedShipCounts[shipType as ShipType] || 0)),
+      ])
+   ) as ShipAmounts;
 }
 
 export function ShipPlacement({
@@ -84,20 +76,41 @@ export function ShipPlacement({
    initialPlayer1PlacedShips: PlacedShipDBT[];
    initialPlayer2PlacedShips: PlacedShipDBT[];
 }>) {
+   const { playerId, hasHydrated } = usePlayer();
+
+   if (!hasHydrated) {
+      return null;
+   }
+
+   const isPlayer1 = initialGame.player1Id === playerId;
+
+   return (
+      <ShipPlacementView
+         initialGame={initialGame}
+         initialOwnShips={isPlayer1 ? initialPlayer1PlacedShips : initialPlayer2PlacedShips}
+      />
+   );
+}
+
+export function ShipPlacementView({
+   initialGame,
+   initialOwnShips,
+}: Readonly<{
+   initialGame: Game;
+   initialOwnShips: PlacedShipDBT[];
+}>) {
    const { game, error } = useGame(initialGame);
    const { playerId } = usePlayer();
+
+   const [placedShips, setPlacedShips] = useState<PlacedShip[]>(
+      convertPlacedShipsDBTToPlacedShip(initialOwnShips)
+   );
 
    const id = useId();
    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
    const [draggingId, setDraggingId] = useState<string | null>(null);
 
-   const [placedShips, setPlacedShips] = useState<PlacedShip[]>(
-      convertPlacedShipsDBTToPlacedShip(
-         playerId === game.player1Id ? initialPlayer1PlacedShips : initialPlayer2PlacedShips
-      )
-   );
-
-   const initialShipsToPlace = {
+   const shipsToPlaceForGame = {
       carrier: game.carriers,
       battleship: game.battleships,
       cruiser: game.cruisers,
@@ -105,7 +118,7 @@ export function ShipPlacement({
       destroyer: game.destroyers,
    };
 
-   adjustShipsToPlace(placedShips, initialShipsToPlace);
+   const initialShipsToPlace = adjustShipsToPlace(placedShips, shipsToPlaceForGame);
 
    const [hoveredCells, setHoveredCells] = useState<HoveredCells>({
       canPlace: false,
@@ -123,8 +136,8 @@ export function ShipPlacement({
 
    useClearSelectionOnRelease({ draggingId, resetHoveredCells });
 
-   function removePlacedShip(ship: PlacedShip) {
-      const newPlacedShips = placedShips.filter((ps) => ps.id !== ship.id);
+   async function removePlacedShip(ship: PlacedShip) {
+      const newPlacedShips = placedShips.filter((ps) => ps.shipId !== ship.shipId);
       const newShipsToPlace = {
          ...shipsToPlace,
          [ship.shipType]: shipsToPlace[ship.shipType] + 1,
@@ -137,21 +150,22 @@ export function ShipPlacement({
       }
    }
 
-   function clearPlacedShips() {
+   async function clearPlacedShips() {
       setPlacedShips([]);
-      setShipsToPlace(initialShipsToPlace);
+      setShipsToPlace(shipsToPlaceForGame);
       setAllShipsCoordinates(new Set());
       if (isReady) {
          updateIsReady(false);
       }
+      await removePlayersShips({ playerId, gameId: game.id });
    }
 
-   function handleDragStart(e: DragStartEvent) {
+   async function handleDragStart(e: DragStartEvent) {
       const shipId = String(e.active.id);
       setDraggingId(shipId);
 
       // Handle dragging a placed ship
-      const placedShip = placedShips.find((ship) => ship.id === shipId);
+      const placedShip = placedShips.find((ship) => ship.shipId === shipId);
       if (placedShip) {
          removePlacedShip(placedShip);
          setOrientation(placedShip.orientation);
@@ -169,18 +183,20 @@ export function ShipPlacement({
    }
 
    function placeShip({
-      id,
+      shipId,
       size,
       orientation,
       coordinates,
    }: {
-      id: string;
+      shipId: string;
       size: number;
       orientation: ShipOrientation;
       coordinates: Coordinates;
    }) {
-      const shipType = id.split("-")[0] as ShipType;
-      const newPlacedShips = placedShips.concat([{ coordinates, size, orientation, id, shipType }]);
+      const shipType = shipId.split("-")[0] as ShipType;
+      const newPlacedShips = placedShips.concat([
+         { coordinates, size, orientation, shipId, shipType },
+      ]);
       setPlacedShips(newPlacedShips);
       setAllShipsCoordinates(getAllShipsCoordinates({ placedShips: newPlacedShips }));
       const newShipsToPlace = { ...shipsToPlace, [shipType]: shipsToPlace[shipType] - 1 };
@@ -207,7 +223,7 @@ export function ShipPlacement({
       };
       const [x, y] = String(e.over.id).split("-").map(Number);
 
-      placeShip({ id: String(e.active.id), size, orientation, coordinates: { x, y } });
+      placeShip({ shipId: String(e.active.id), size, orientation, coordinates: { x, y } });
    }
 
    const highlightPlacement = useCallback(

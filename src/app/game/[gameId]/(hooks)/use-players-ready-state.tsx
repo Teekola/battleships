@@ -25,8 +25,8 @@ async function updatePlayerReady({
 export function usePlayersReadyState(initialGame: Readonly<Game>) {
    const { game, error } = useGame(initialGame);
 
-   const player = usePlayer();
-   const isPlayer1 = player.playerId === game.player1Id;
+   const { playerId } = usePlayer();
+   const isPlayer1 = playerId === game.player1Id;
    const initialIsReady = Boolean(isPlayer1 ? game.player1Ready : game.player2Ready);
    const initialIsOpponentReady = Boolean(isPlayer1 ? game.player2Ready : game.player1Ready);
    const router = useRouter();

@@ -49,6 +49,7 @@ model PlacedShip {
    game        Game            @relation(fields: [gameId], references: [id])
    gameId      String
    playerId    String
+   shipId      String
    shipType    ShipType
    x           Int
    y           Int

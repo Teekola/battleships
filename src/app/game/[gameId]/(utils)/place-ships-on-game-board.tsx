@@ -1,7 +1,7 @@
 import { BoardWithShips, PlacedShip } from "./types";
 
 export function placeShipsOnGameBoard(ships: PlacedShip[], board: BoardWithShips) {
-   ships.forEach(({ coordinates, orientation, size, id }) => {
+   ships.forEach(({ coordinates, orientation, size, shipId }) => {
       const { x, y } = coordinates;
       for (let i = 0; i < size; i++) {
          const isStart = i === 0;
@@ -13,7 +13,7 @@ export function placeShipsOnGameBoard(ships: PlacedShip[], board: BoardWithShips
                x: x + i,
                y,
                isShip: true,
-               shipId: id,
+               shipId,
                shipSize: size,
                shipOrientation: orientation,
                shipPiece,
@@ -23,7 +23,7 @@ export function placeShipsOnGameBoard(ships: PlacedShip[], board: BoardWithShips
                x,
                y: y + i,
                isShip: true,
-               shipId: id,
+               shipId,
                shipSize: size,
                shipOrientation: orientation,
                shipPiece,

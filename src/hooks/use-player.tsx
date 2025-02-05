@@ -7,6 +7,7 @@ const PLAYER_NAME_KEY = "playerName";
 
 export function usePlayer() {
    const [playerId, setPlayerId] = useState<string>("");
+   const [hasHydrated, setHasHydrated] = useState(false);
    const [playerName, setPlayerName] = useState<string | null>(null);
 
    useEffect(() => {
@@ -24,6 +25,7 @@ export function usePlayer() {
          localStorage.setItem(PLAYER_ID_KEY, newPlayerId);
          setPlayerId(newPlayerId);
       }
+      setHasHydrated(true);
    }, []);
 
    const updatePlayerName = useCallback((name: string) => {
@@ -31,5 +33,5 @@ export function usePlayer() {
       localStorage.setItem(PLAYER_NAME_KEY, name);
    }, []);
 
-   return { playerId, playerName, updatePlayerName };
+   return { playerId, playerName, updatePlayerName, hasHydrated };
 }

@@ -3,10 +3,14 @@
 import { db } from "@/utils/db";
 import { UpdateGameArgs } from "@/utils/game-db";
 import { CreateMoveArgs } from "@/utils/move-db";
-import { GetShipsArgs, PlaceShipsArgs } from "@/utils/placed-ship-db";
+import { GetShipsArgs, PlaceShipsArgs, RemoveShipsArgs } from "@/utils/placed-ship-db";
 
 export async function placeShips(data: PlaceShipsArgs) {
    await db.placedShip.placeShips(data);
+}
+
+export async function removePlayersShips(data: RemoveShipsArgs) {
+   await db.placedShip.removePlayersShips(data);
 }
 
 export async function startGame(data: { gameId: string; playerIds: string[] }) {

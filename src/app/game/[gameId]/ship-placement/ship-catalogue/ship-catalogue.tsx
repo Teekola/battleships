@@ -34,7 +34,7 @@ export function ShipCatalogue({
                         key={shipType}
                         size={shipSizes[shipType]}
                         orientation={orientation}
-                        id={`${shipType}-${shipsToPlace[shipType]}`}
+                        shipId={`${shipType}-${shipsToPlace[shipType]}`}
                      >
                         {!draggingId?.startsWith(shipType) && (
                            <ShipCatalogueItem size={shipSizes[shipType]} />

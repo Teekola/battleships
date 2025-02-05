@@ -56,7 +56,8 @@ export interface HoveredCell extends Coordinates {
 }
 
 export type PlacedShip = {
-   id: string;
+   id?: number;
+   shipId: string;
    shipType: ShipType;
    coordinates: Coordinates;
    size: number;
