@@ -2,18 +2,16 @@
 
 import { useCallback, useState } from "react";
 
-import { GameState } from "@prisma/client";
-
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import { Game as GameT } from "@/utils/game-db";
 import { AllMovesByPlayerId } from "@/utils/move-db";
 import { PlacedShipDBT, convertPlacedShipsDBTToPlacedShip } from "@/utils/placed-ship-db";
 
+import { useCheckGameEnd } from "../(hooks)/use-check-game-end";
 import { useGame } from "../(hooks)/use-game";
 import { useMoves } from "../(hooks)/use-moves";
 import { useGameStore } from "../(stores)/game-store-provider";
-import { checkGameEnd } from "../(utils)/check-game-end";
 import { Coordinates } from "../(utils)/types";
 import { makeMove } from "../actions";
 import { updateGame } from "../actions";
@@ -44,8 +42,7 @@ export function Game({
    const opponentShips = isPlayer1 ? initialPlayer2PlacedShips : initialPlayer1PlacedShips;
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
    const [hasPlayed, setHasPlayed] = useState(false);
-   const setGameEndReason = useGameStore((s) => s.setGameEndReason);
-   const setWinnerId = useGameStore((s) => s.setWinnerId);
+   useCheckGameEnd(initialGame);
 
    const hitCoordinate = useCallback(
       async (coordinates: Coordinates) => {
@@ -53,7 +50,7 @@ export function Game({
 
          setHasPlayed(true);
 
-         const { ownMoves: newOwnMoves, opponentMoves: newOpponentMoves } = addMove({
+         addMove({
             id: 9999,
             gameId: game.id,
             playerId,
@@ -70,38 +67,11 @@ export function Game({
          });
 
          setTimeout(async () => {
-            const { gameState, gameEndReason, winnerId } = await checkGameEnd({
-               ownHitsRemaining: ownHitsRemaining ?? 2,
-               opponentHitsRemaining: opponentHitsRemaining ?? 2,
-               gameId: game.id,
-               opponentId,
-               playerId,
-               ownMoves: newOwnMoves,
-               opponentMoves: newOpponentMoves,
-            });
-
-            if (gameState === GameState.FINISHED) {
-               setGameEndReason(gameEndReason);
-               if (winnerId) setWinnerId(winnerId);
-               return;
-            }
-
             await updateGame({ gameId: game.id, currentTurn: opponentId });
             setHasPlayed(false);
          }, 1500);
       },
-      [
-         currentTurn,
-         playerId,
-         hasPlayed,
-         game,
-         addMove,
-         ownHitsRemaining,
-         opponentHitsRemaining,
-         setGameEndReason,
-         setWinnerId,
-         opponentId,
-      ]
+      [currentTurn, playerId, hasPlayed, game, addMove, opponentId]
    );
 
    if (!hasHydrated) {

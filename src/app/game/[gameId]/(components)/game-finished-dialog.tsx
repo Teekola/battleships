@@ -12,9 +12,11 @@ import { useGameStore } from "../(stores)/game-store-provider";
 export function GameFinishedDialog({ initialGame }: { initialGame: Game }) {
    const { game } = useGame(initialGame);
    const winnerId = useGameStore((s) => s.winnerId);
-   const { playerId } = usePlayer();
+   const { playerId, hasHydrated } = usePlayer();
    const winnerName = winnerId === game.player1Id ? game.player1Name : game.player2Name;
    const isOpen = game.state === GameState.FINISHED;
+
+   if (!hasHydrated) return null;
 
    return (
       <Dialog open={isOpen}>

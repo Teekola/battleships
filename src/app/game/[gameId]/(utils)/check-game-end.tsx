@@ -21,7 +21,6 @@ export async function checkGameEnd({
    ownMoves: MoveDBT[];
    opponentMoves: MoveDBT[];
 }) {
-   console.log("CHECK GAME END");
    if (
       opponentHitsRemaining < 1 &&
       ownHitsRemaining < 1 &&

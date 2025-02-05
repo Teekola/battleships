@@ -2,15 +2,12 @@
 
 import { useEffect, useState } from "react";
 
-import { GameState } from "@prisma/client";
-
 import { usePlayer } from "@/hooks/use-player";
 import { supabase } from "@/lib/supabase";
 import { Game } from "@/utils/game-db";
 import { AllMovesByPlayerId, MoveDBT, movesToMovesByPlayerId } from "@/utils/move-db";
 
 import { useGameStore } from "../(stores)/game-store-provider";
-import { checkGameEnd } from "../(utils)/check-game-end";
 
 export function useMoves({
    initialMoves,
@@ -89,30 +86,10 @@ export function useMoves({
                if (payload.eventType === "INSERT") {
                   const move = { ...payload.new } as MoveDBT;
                   if (move.playerId !== playerId) {
-                     const {
-                        ownMoves: newOwnMoves,
-                        opponentMoves: newOpponentMoves,
-                        ownHitsRemaining: newOwnHitsRemaining,
-                        opponentHitsRemaining: newOpponentHitsRemaining,
-                     } = addMove({
+                     addMove({
                         ...move,
                         isOwnMove: false,
                      });
-
-                     const { gameEndReason, winnerId, gameState } = await checkGameEnd({
-                        ownHitsRemaining: newOwnHitsRemaining ?? 2,
-                        opponentHitsRemaining: newOpponentHitsRemaining ?? 2,
-                        gameId: initialGame.id,
-                        opponentId,
-                        playerId,
-                        ownMoves: newOwnMoves,
-                        opponentMoves: newOpponentMoves,
-                     });
-                     if (gameState === GameState.FINISHED) {
-                        setGameEndReason(gameEndReason);
-                        if (winnerId) setWinnerId(winnerId);
-                        return;
-                     }
                   }
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
