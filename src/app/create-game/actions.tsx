@@ -1,6 +1,7 @@
 "use server";
 
-import { CreateGameArgs, db } from "@/utils/db";
+import { db } from "@/utils/db";
+import { CreateGameArgs } from "@/utils/game-db";
 
 export async function createGame(createGameArgs: CreateGameArgs) {
    const gameId = await db.game.create(createGameArgs);

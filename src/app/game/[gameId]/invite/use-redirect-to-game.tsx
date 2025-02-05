@@ -14,7 +14,7 @@ export function useRedirectToGame(initialGame: Readonly<Game>) {
    useEffect(() => {
       console.log(game.state);
       if (game.player1Name && game.player2Name) {
-         router.push(`/game/${game.id}`);
+         router.push(`/game/${game.id}/ship-placement`);
       }
    }, [game.id, game.player1Name, game.player2Name, game.state, router]);
 

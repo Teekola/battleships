@@ -1,7 +1,10 @@
-import { useMemo } from "react";
+"use client";
+
+import { useEffect, useMemo } from "react";
 
 import { cn } from "@/lib/utils";
 
+import { useGameStore } from "../(stores)/game-store-provider";
 import { generateGameBoard } from "../(utils)/generate-game-board";
 import { placeHitsOnGameBoard } from "../(utils)/place-hits-on-game-board";
 import { placeShipsOnGameBoard } from "../(utils)/place-ships-on-game-board";
@@ -20,11 +23,22 @@ export function OpponentGameBoard({
    moves: Move[];
    hitCoordinate: (coordinates: Coordinates) => void;
 }>) {
-   const board = useMemo(() => {
+   const setOpponentShipsRemaining = useGameStore((s) => s.setOpponentShipsRemaining);
+   const { board, shipsRemaining } = useMemo(() => {
       const gameBoard = generateGameBoard(size);
       placeShipsOnGameBoard(placedShips, gameBoard);
-      return placeHitsOnGameBoard(moves, gameBoard, placedShips);
-   }, [moves, size, placedShips]);
+      const { board: boardWithHits, shipsRemaining } = placeHitsOnGameBoard(
+         moves,
+         gameBoard,
+         placedShips
+      );
+
+      return { board: boardWithHits, shipsRemaining };
+   }, [size, placedShips, moves]);
+
+   useEffect(() => {
+      setOpponentShipsRemaining(shipsRemaining);
+   }, [shipsRemaining, setOpponentShipsRemaining]);
 
    return (
       <div className="aspect-square">

@@ -13,7 +13,7 @@ import { Input } from "@/ui/input";
 import { Game } from "@/utils/game-db";
 
 import { useGame } from "../(hooks)/use-game";
-import { updateGame } from "./actions";
+import { updateGame } from "../actions";
 import { PlayerNameFormData, formSchema } from "./player-name-schema";
 
 export function PlayerNameForm({
@@ -51,7 +51,7 @@ export function PlayerNameForm({
          state: GameState.SHIP_PLACEMENT,
       });
       console.log(updatedGame);
-      router.push(`/game/${gameId}`);
+      router.push(`/game/${gameId}/ship-placement`);
    }
 
    if (error) {

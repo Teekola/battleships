@@ -25,6 +25,7 @@ export function placeHitsOnGameBoard(
    });
 
    // Determine if any ships are fully sunk
+   let totalSunkShips = 0;
    placedShips.forEach((ship) => {
       const { coordinates, size, orientation } = ship;
 
@@ -45,8 +46,11 @@ export function placeHitsOnGameBoard(
                cell.isSunk = true;
             }
          });
+         totalSunkShips++;
       }
    });
 
-   return newBoard;
+   const shipsRemaining = placedShips.length - totalSunkShips;
+
+   return { board: newBoard, shipsRemaining };
 }

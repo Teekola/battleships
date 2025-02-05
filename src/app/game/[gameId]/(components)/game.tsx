@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { GameEndReason, GameState } from "@prisma/client";
 
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
@@ -10,9 +12,10 @@ import { PlacedShipDBT, convertPlacedShipsDBTToPlacedShip } from "@/utils/placed
 
 import { useGame } from "../(hooks)/use-game";
 import { useMoves } from "../(hooks)/use-moves";
+import { useGameStore } from "../(stores)/game-store-provider";
 import { Coordinates } from "../(utils)/types";
-import { updateGame } from "../join/actions";
-import { makeMove } from "./actions";
+import { makeMove } from "../actions";
+import { updateGame } from "../actions";
 import { OpponentGameBoard } from "./opponent-game-board";
 import { OwnGameBoard } from "./own-game-board";
 
@@ -29,6 +32,10 @@ export function Game({
 }>) {
    const { game, currentTurn } = useGame(initialGame);
    const { ownMoves, opponentMoves, addMove } = useMoves({ initialMoves, initialGame });
+   const ownShipsRemaining = useGameStore((s) => s.ownShipsRemaining);
+   const opponentShipsRemaining = useGameStore((s) => s.opponentShipsRemaining);
+   const setGameEndReason = useGameStore((s) => s.setGameEndReason);
+   const setWinnerId = useGameStore((s) => s.setWinnerId);
 
    const { playerId } = usePlayer();
 
@@ -37,6 +44,62 @@ export function Game({
    const opponentShips = isPlayer1 ? initialPlayer2PlacedShips : initialPlayer1PlacedShips;
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
    const [hasPlayed, setHasPlayed] = useState(false);
+
+   // Check for winning and update state
+   useEffect(() => {
+      if (ownShipsRemaining === undefined || opponentShipsRemaining === undefined) return;
+
+      (async () => {
+         if (
+            ownShipsRemaining < 1 &&
+            opponentShipsRemaining < 1 &&
+            ownMoves.length === opponentMoves.length
+         ) {
+            setGameEndReason(GameEndReason.TIE);
+            await updateGame({
+               gameId: game.id,
+               gameEndReason: GameEndReason.TIE,
+               state: GameState.FINISHED,
+            });
+
+            return;
+         }
+
+         if (ownShipsRemaining < 1 && ownMoves.length === opponentMoves.length) {
+            setGameEndReason(GameEndReason.WIN);
+            setWinnerId(opponentId);
+            await updateGame({
+               gameId: game.id,
+               gameEndReason: GameEndReason.WIN,
+               state: GameState.FINISHED,
+            });
+
+            return;
+         }
+
+         if (opponentShipsRemaining < 1 && ownMoves.length === opponentMoves.length) {
+            setGameEndReason(GameEndReason.WIN);
+            setWinnerId(playerId);
+            await updateGame({
+               gameId: game.id,
+               gameEndReason: GameEndReason.WIN,
+               state: GameState.FINISHED,
+            });
+
+            return;
+         }
+      })();
+   }, [
+      ownShipsRemaining,
+      opponentShipsRemaining,
+      ownMoves,
+      opponentMoves,
+      game.id,
+      setGameEndReason,
+      setWinnerId,
+      opponentId,
+      playerId,
+   ]);
 
    const hitCoordinate = useCallback(
       async (coordinates: Coordinates) => {
@@ -85,6 +148,7 @@ export function Game({
                      moves={opponentMoves}
                      placedShips={convertPlacedShipsDBTToPlacedShip(ownShips)}
                   />
+                  <p>{ownShipsRemaining} ships remaining</p>
                </section>
                <section
                   className={cn(
@@ -99,6 +163,7 @@ export function Game({
                      placedShips={convertPlacedShipsDBTToPlacedShip(opponentShips)}
                      moves={ownMoves}
                   />
+                  <p>{opponentShipsRemaining} ships remaining</p>
                </section>
             </div>
          </div>

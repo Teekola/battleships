@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 
 import { db } from "@/utils/db";
 
-import { Game } from "./(components)/game";
+import { ShipPlacement } from "./ship-placement";
 
-export default async function GamePage({
+export default async function ShipPlacementPage({
    params,
 }: Readonly<{ params: Promise<{ gameId: string }> }>) {
    const gameId = (await params).gameId;
@@ -12,7 +12,6 @@ export default async function GamePage({
 
    if (!game) notFound();
 
-   const moves = await db.move.getAll({ gameId });
    const player1PlacedShips = game.player1Id
       ? await db.placedShip.getShips({ gameId, playerId: game.player1Id })
       : [];
@@ -21,9 +20,8 @@ export default async function GamePage({
       : [];
 
    return (
-      <Game
+      <ShipPlacement
          initialGame={game}
-         initialMoves={moves}
          initialPlayer1PlacedShips={player1PlacedShips}
          initialPlayer2PlacedShips={player2PlacedShips}
       />

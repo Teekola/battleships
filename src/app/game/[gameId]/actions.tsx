@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/utils/db";
+import { UpdateGameArgs } from "@/utils/game-db";
 import { CreateMoveArgs } from "@/utils/move-db";
 import { GetShipsArgs, PlaceShipsArgs } from "@/utils/placed-ship-db";
 
@@ -18,4 +19,9 @@ export async function getPlacedShips(data: GetShipsArgs) {
 
 export async function makeMove(data: CreateMoveArgs) {
    return await db.move.create(data);
+}
+
+export async function updateGame(data: UpdateGameArgs) {
+   const game = await db.game.update(data);
+   return game;
 }

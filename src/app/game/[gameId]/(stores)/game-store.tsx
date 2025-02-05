@@ -1,3 +1,4 @@
+import { GameEndReason } from "@prisma/client";
 import { createStore } from "zustand/vanilla";
 
 import { Game } from "@/utils/game-db";
@@ -8,11 +9,19 @@ export type GameStoreState = {
    currentTurn: string;
    player1Moves: MoveDBT[];
    player2Moves: MoveDBT[];
+   winnerId?: string;
+   gameEndReason?: GameEndReason;
+   ownShipsRemaining?: number;
+   opponentShipsRemaining?: number;
 };
 
 export type GameStoreActions = {
    setGame: (g: Game) => void;
    setCurrentTurn: (playerId: string) => void;
+   setOwnShipsRemaining: (n: number) => void;
+   setOpponentShipsRemaining: (n: number) => void;
+   setWinnerId: (s: string) => void;
+   setGameEndReason: (r: GameEndReason) => void;
    setPlayer1Moves: (moves: MoveDBT[]) => void;
    setPlayer2Moves: (moves: MoveDBT[]) => void;
    addMove: ({
@@ -46,6 +55,10 @@ export function createGameStore(initState: GameStoreState = defaultInitState) {
       ...initState,
       setGame: (g) => set((state) => ({ ...state, game: g })),
       setCurrentTurn: (playerId) => set((state) => ({ ...state, currentTurn: playerId })),
+      setOwnShipsRemaining: (n) => set((state) => ({ ...state, ownShipsRemaining: n })),
+      setOpponentShipsRemaining: (n) => set((state) => ({ ...state, opponentShipsRemaining: n })),
+      setWinnerId: (s) => set((state) => ({ ...state, winnerId: s })),
+      setGameEndReason: (r) => set((state) => ({ ...state, gameEndReason: r })),
       setPlayer1Moves: (moves) => set((state) => ({ ...state, player1Moves: moves })),
       setPlayer2Moves: (moves) => set((state) => ({ ...state, player2Moves: moves })),
       addMove: ({ id, gameId, playerId, isPlayer1, x, y }) =>

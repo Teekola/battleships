@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { useRouter } from "next/navigation";
+
 import { usePlayer } from "@/hooks/use-player";
 import { Game } from "@/utils/game-db";
 
-import { startGame } from "../(components)/actions";
-import { updateGame } from "../join/actions";
+import { startGame } from "../actions";
+import { updateGame } from "../actions";
 import { useGame } from "./use-game";
 
 async function updatePlayerReady({
@@ -27,6 +29,7 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
    const isPlayer1 = player.playerId === game.player1Id;
    const initialIsReady = Boolean(isPlayer1 ? game.player1Ready : game.player2Ready);
    const initialIsOpponentReady = Boolean(isPlayer1 ? game.player2Ready : game.player1Ready);
+   const router = useRouter();
 
    const [isReady, setIsReady] = useState(initialIsReady);
    const [isOpponentReady, setIsOpponentReady] = useState(initialIsOpponentReady);
@@ -54,10 +57,13 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
    );
 
    useEffect(() => {
-      if (isReady && isOpponentReady && game.player1Id && game.player2Id) {
-         startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
-      }
-   }, [isReady, isOpponentReady, game.id, game.player1Id, game.player2Id]);
+      (async () => {
+         if (isReady && isOpponentReady && game.player1Id && game.player2Id) {
+            await startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
+            router.push(`/game/${game.id}`);
+         }
+      })();
+   }, [isReady, isOpponentReady, game.id, game.player1Id, game.player2Id, router]);
 
    return { error, isReady, isOpponentReady, updateIsReady };
 }

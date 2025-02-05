@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 
+import { ShipPiece } from "../(components)/ship-piece";
 import { generateGameBoard } from "../(utils)/generate-game-board";
 import { placeShipsOnGameBoard } from "../(utils)/place-ships-on-game-board";
 import { HoveredCells, PlacedShip } from "../(utils)/types";
 import { DraggableShip } from "./draggable-ship";
 import { DroppableCell } from "./droppable-cell";
-import { ShipPiece } from "./ship-piece";
 
 export function ShipPlacementBoard({
    size,

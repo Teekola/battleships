@@ -13,6 +13,7 @@ const defaultGameArgs = Prisma.validator<Prisma.GameDefaultArgs>()({
       player1Ready: true,
       player2Ready: true,
       state: true,
+      gameEndReason: true,
       currentTurn: true,
       boardSize: true,
       carriers: true,

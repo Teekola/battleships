@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 import { Game } from "@/utils/game-db";
 import { PlacedShipDBT, convertPlacedShipsDBTToPlacedShip } from "@/utils/placed-ship-db";
 
+import { Ship } from "../(components)/ship";
 import { useClearSelectionOnRelease } from "../(hooks)/use-clear-selection-on-resize";
 import { useGame } from "../(hooks)/use-game";
 import { useOrientation } from "../(hooks)/use-orientation";
@@ -37,8 +38,7 @@ import {
    ShipAmounts,
    ShipOrientation,
 } from "../(utils)/types";
-import { placeShips } from "./actions";
-import { Ship } from "./ship";
+import { placeShips } from "../actions";
 import { ShipCatalogue } from "./ship-catalogue";
 import { ShipPlacementBoard } from "./ship-placement-board";
 
