@@ -20,22 +20,27 @@ export function OwnGameBoard({
    moves: Move[];
 }>) {
    const setOwnShipsRemaining = useGameStore((s) => s.setOwnShipsRemaining);
+   const setOpponentHitsRemaining = useGameStore((s) => s.setOpponentHitsRemaining);
 
-   const { board, shipsRemaining } = useMemo(() => {
+   const { board, shipsRemaining, hitsRemaining } = useMemo(() => {
       const gameBoard = generateGameBoard(size);
       placeShipsOnGameBoard(placedShips, gameBoard);
-      const { board: boardWithHits, shipsRemaining } = placeHitsOnGameBoard(
-         moves,
-         gameBoard,
-         placedShips
-      );
+      const {
+         board: boardWithHits,
+         shipsRemaining,
+         hitsRemaining,
+      } = placeHitsOnGameBoard(moves, gameBoard, placedShips);
 
-      return { board: boardWithHits, shipsRemaining };
+      return { board: boardWithHits, shipsRemaining, hitsRemaining };
    }, [size, placedShips, moves]);
 
    useEffect(() => {
       setOwnShipsRemaining(shipsRemaining);
    }, [shipsRemaining, setOwnShipsRemaining]);
+
+   useEffect(() => {
+      setOpponentHitsRemaining(hitsRemaining);
+   }, [hitsRemaining, setOpponentHitsRemaining]);
 
    return (
       <div className="aspect-square">

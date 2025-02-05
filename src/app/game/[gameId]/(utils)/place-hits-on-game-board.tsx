@@ -24,33 +24,41 @@ export function placeHitsOnGameBoard(
       cell.isHit = true;
    });
 
-   // Determine if any ships are fully sunk
+   // Track total hits and sunk ships
    let totalSunkShips = 0;
-   placedShips.forEach((ship) => {
-      const { coordinates, size, orientation } = ship;
+   let totalHits = 0;
 
-      // Get all ship's cells based on orientation and size
-      const shipCells = Array.from({ length: size }).map((_, i) => ({
+   placedShips.forEach(({ coordinates, size, orientation }) => {
+      const shipCells = Array.from({ length: size }, (_, i) => ({
          x: orientation === "horizontal" ? coordinates.x + i : coordinates.x,
          y: orientation === "vertical" ? coordinates.y + i : coordinates.y,
       }));
 
-      // Check if all ship's cells are hit
-      const isSunk = shipCells.every(({ x, y }) => newBoard[y][x].isHit);
+      let shipHits = 0;
 
-      // Update board with sunk status
-      if (isSunk) {
+      // Count hits and check if ship is fully sunk in one loop
+      shipCells.forEach(({ x, y }) => {
+         const cell = newBoard[y][x];
+         if (cell.isShip && cell.isHit) {
+            shipHits++;
+            totalHits++;
+         }
+      });
+
+      if (shipHits === size) {
+         totalSunkShips++;
          shipCells.forEach(({ x, y }) => {
             const cell = newBoard[y][x];
             if (cell.isShip) {
                cell.isSunk = true;
             }
          });
-         totalSunkShips++;
       }
    });
 
+   const hitsToSinkAll = placedShips.reduce((sum, { size }) => sum + size, 0);
+   const hitsRemaining = hitsToSinkAll - totalHits;
    const shipsRemaining = placedShips.length - totalSunkShips;
 
-   return { board: newBoard, shipsRemaining };
+   return { board: newBoard, shipsRemaining, hitsRemaining };
 }

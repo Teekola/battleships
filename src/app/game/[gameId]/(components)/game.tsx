@@ -1,8 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-
-import { GameEndReason, GameState } from "@prisma/client";
+import { useCallback, useState } from "react";
 
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
@@ -10,12 +8,14 @@ import { Game as GameT } from "@/utils/game-db";
 import { AllMovesByPlayerId } from "@/utils/move-db";
 import { PlacedShipDBT, convertPlacedShipsDBTToPlacedShip } from "@/utils/placed-ship-db";
 
+import { useCheckGameEnd } from "../(hooks)/use-check-game-end";
 import { useGame } from "../(hooks)/use-game";
 import { useMoves } from "../(hooks)/use-moves";
 import { useGameStore } from "../(stores)/game-store-provider";
 import { Coordinates } from "../(utils)/types";
 import { makeMove } from "../actions";
 import { updateGame } from "../actions";
+import { GameFinishedDialog } from "./game-finished-dialog";
 import { OpponentGameBoard } from "./opponent-game-board";
 import { OwnGameBoard } from "./own-game-board";
 
@@ -31,75 +31,19 @@ export function Game({
    initialPlayer2PlacedShips: PlacedShipDBT[];
 }>) {
    const { game, currentTurn } = useGame(initialGame);
-   const { ownMoves, opponentMoves, addMove } = useMoves({ initialMoves, initialGame });
+   const { ownMoves, opponentMoves, addMove, addMove2 } = useMoves({ initialMoves, initialGame });
    const ownShipsRemaining = useGameStore((s) => s.ownShipsRemaining);
    const opponentShipsRemaining = useGameStore((s) => s.opponentShipsRemaining);
-   const setGameEndReason = useGameStore((s) => s.setGameEndReason);
-   const setWinnerId = useGameStore((s) => s.setWinnerId);
-
+   const ownHitsRemaining = useGameStore((s) => s.ownHitsRemaining);
+   const opponentHitsRemaining = useGameStore((s) => s.opponentHitsRemaining);
    const { playerId } = usePlayer();
-
    const isPlayer1 = game.player1Id === playerId;
    const ownShips = isPlayer1 ? initialPlayer1PlacedShips : initialPlayer2PlacedShips;
    const opponentShips = isPlayer1 ? initialPlayer2PlacedShips : initialPlayer1PlacedShips;
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
    const [hasPlayed, setHasPlayed] = useState(false);
 
-   // Check for winning and update state
-   useEffect(() => {
-      if (ownShipsRemaining === undefined || opponentShipsRemaining === undefined) return;
-
-      (async () => {
-         if (
-            ownShipsRemaining < 1 &&
-            opponentShipsRemaining < 1 &&
-            ownMoves.length === opponentMoves.length
-         ) {
-            setGameEndReason(GameEndReason.TIE);
-            await updateGame({
-               gameId: game.id,
-               gameEndReason: GameEndReason.TIE,
-               state: GameState.FINISHED,
-            });
-
-            return;
-         }
-
-         if (ownShipsRemaining < 1 && ownMoves.length === opponentMoves.length) {
-            setGameEndReason(GameEndReason.WIN);
-            setWinnerId(opponentId);
-            await updateGame({
-               gameId: game.id,
-               gameEndReason: GameEndReason.WIN,
-               state: GameState.FINISHED,
-            });
-
-            return;
-         }
-
-         if (opponentShipsRemaining < 1 && ownMoves.length === opponentMoves.length) {
-            setGameEndReason(GameEndReason.WIN);
-            setWinnerId(playerId);
-            await updateGame({
-               gameId: game.id,
-               gameEndReason: GameEndReason.WIN,
-               state: GameState.FINISHED,
-            });
-
-            return;
-         }
-      })();
-   }, [
-      ownShipsRemaining,
-      opponentShipsRemaining,
-      ownMoves,
-      opponentMoves,
-      game.id,
-      setGameEndReason,
-      setWinnerId,
-      opponentId,
-      playerId,
-   ]);
+   useCheckGameEnd();
 
    const hitCoordinate = useCallback(
       async (coordinates: Coordinates) => {
@@ -115,6 +59,14 @@ export function Game({
             y: coordinates.y,
             isPlayer1,
          });
+         addMove2({
+            id: 9999,
+            gameId: game.id,
+            playerId,
+            x: coordinates.x,
+            y: coordinates.y,
+            isOwnMove: true,
+         });
 
          await makeMove({
             gameId: game.id,
@@ -128,45 +80,59 @@ export function Game({
             setHasPlayed(false);
          }, 1500);
       },
-      [currentTurn, playerId, hasPlayed, addMove, game.id, isPlayer1, opponentId]
+      [currentTurn, playerId, hasPlayed, addMove, addMove2, game.id, isPlayer1, opponentId]
    );
 
    return (
-      <div>
-         <div className="mx-auto max-w-5xl p-2">
-            <p className={cn(currentTurn === opponentId && "animate-pulse")}>
-               {currentTurn === playerId ? "Your turn!" : "Waiting for opponent to play..."}
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-               <section
-                  className={cn(currentTurn === playerId && "order-2 w-1/3 sm:order-1 sm:w-full")}
-               >
-                  <h2 className="mb-1 text-lg font-bold">Your Board</h2>
+      <>
+         <GameFinishedDialog initialGame={initialGame} />
+         <div>
+            <div className="mx-auto max-w-5xl p-2">
+               <p className={cn(currentTurn === opponentId && "animate-pulse")}>
+                  {currentTurn === playerId ? "Your turn!" : "Waiting for opponent to play..."}
+               </p>
+               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <section
+                     className={cn(
+                        currentTurn === playerId && "order-2 w-1/3 sm:order-1 sm:w-full"
+                     )}
+                  >
+                     <h2 className="mb-1 text-lg font-bold">Your Board</h2>
 
-                  <OwnGameBoard
-                     size={game.boardSize}
-                     moves={opponentMoves}
-                     placedShips={convertPlacedShipsDBTToPlacedShip(ownShips)}
-                  />
-                  <p>{ownShipsRemaining} ships remaining</p>
-               </section>
-               <section
-                  className={cn(
-                     currentTurn === playerId && "order-1 sm:order-2",
-                     currentTurn === opponentId && "order-1 w-1/3 sm:order-2 sm:w-full"
-                  )}
-               >
-                  <h2 className="mb-1 text-lg font-bold">Opponent&apos;s Board</h2>
-                  <OpponentGameBoard
-                     hitCoordinate={hitCoordinate}
-                     size={game.boardSize}
-                     placedShips={convertPlacedShipsDBTToPlacedShip(opponentShips)}
-                     moves={ownMoves}
-                  />
-                  <p>{opponentShipsRemaining} ships remaining</p>
-               </section>
+                     <OwnGameBoard
+                        size={game.boardSize}
+                        moves={opponentMoves}
+                        placedShips={convertPlacedShipsDBTToPlacedShip(ownShips)}
+                     />
+                     <p>{ownShipsRemaining} ships remaining</p>
+                     {opponentHitsRemaining === 1 &&
+                        ownHitsRemaining === 0 &&
+                        opponentMoves.length < ownMoves.length && (
+                           <p>Opponent can still tie the game with a hit!</p>
+                        )}
+                  </section>
+                  <section
+                     className={cn(
+                        currentTurn === playerId && "order-1 sm:order-2",
+                        currentTurn === opponentId && "order-1 w-1/3 sm:order-2 sm:w-full"
+                     )}
+                  >
+                     <h2 className="mb-1 text-lg font-bold">Opponent&apos;s Board</h2>
+                     <OpponentGameBoard
+                        hitCoordinate={hitCoordinate}
+                        size={game.boardSize}
+                        placedShips={convertPlacedShipsDBTToPlacedShip(opponentShips)}
+                        moves={ownMoves}
+                     />
+                     <p>{opponentShipsRemaining} ships remaining</p>
+
+                     {ownHitsRemaining === 1 &&
+                        opponentHitsRemaining === 0 &&
+                        ownMoves.length < opponentMoves.length && <p>Hit to tie the game!</p>}
+                  </section>
+               </div>
             </div>
          </div>
-      </div>
+      </>
    );
 }

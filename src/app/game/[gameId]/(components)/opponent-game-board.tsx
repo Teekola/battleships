@@ -24,21 +24,26 @@ export function OpponentGameBoard({
    hitCoordinate: (coordinates: Coordinates) => void;
 }>) {
    const setOpponentShipsRemaining = useGameStore((s) => s.setOpponentShipsRemaining);
-   const { board, shipsRemaining } = useMemo(() => {
+   const setOwnHitsRemaining = useGameStore((s) => s.setOwnHitsRemaining);
+   const { board, shipsRemaining, hitsRemaining } = useMemo(() => {
       const gameBoard = generateGameBoard(size);
       placeShipsOnGameBoard(placedShips, gameBoard);
-      const { board: boardWithHits, shipsRemaining } = placeHitsOnGameBoard(
-         moves,
-         gameBoard,
-         placedShips
-      );
+      const {
+         board: boardWithHits,
+         shipsRemaining,
+         hitsRemaining,
+      } = placeHitsOnGameBoard(moves, gameBoard, placedShips);
 
-      return { board: boardWithHits, shipsRemaining };
+      return { board: boardWithHits, shipsRemaining, hitsRemaining };
    }, [size, placedShips, moves]);
 
    useEffect(() => {
       setOpponentShipsRemaining(shipsRemaining);
    }, [shipsRemaining, setOpponentShipsRemaining]);
+
+   useEffect(() => {
+      setOwnHitsRemaining(hitsRemaining);
+   }, [hitsRemaining, setOwnHitsRemaining]);
 
    return (
       <div className="aspect-square">

@@ -39,8 +39,11 @@ export function useMoves({
         : initialPlayer1Moves;
 
    const addMove = useGameStore((s) => s.addMove);
+   const addMove2 = useGameStore((s) => s.addMove2);
    const setPlayer1Moves = useGameStore((s) => s.setPlayer1Moves);
    const setPlayer2Moves = useGameStore((s) => s.setPlayer2Moves);
+   const setOwnMoves = useGameStore((s) => s.setOwnMoves);
+   const setOpponentMoves = useGameStore((s) => s.setOpponentMoves);
 
    const [error, setError] = useState("");
 
@@ -64,6 +67,8 @@ export function useMoves({
          const player2Moves = movesByPlayerId[game.player2Id!] ?? [];
          setPlayer1Moves(player1Moves);
          setPlayer2Moves(player2Moves);
+         setOwnMoves(isPlayer1 ? player1Moves : player2Moves);
+         setOpponentMoves(isPlayer1 ? player2Moves : player1Moves);
          setError("");
       };
 
@@ -79,8 +84,10 @@ export function useMoves({
 
                if (payload.eventType === "INSERT") {
                   const move = { ...payload.new } as MoveDBT;
-                  if (move.playerId !== playerId)
+                  if (move.playerId !== playerId) {
                      addMove({ ...move, isPlayer1: opponentId === game.player1Id });
+                     addMove2({ ...move, isOwnMove: false });
+                  }
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
                   setError(`Game ${initialGame.id} has been deleted.`);
@@ -102,7 +109,10 @@ export function useMoves({
       setPlayer1Moves,
       setPlayer2Moves,
       opponentId,
+      setOwnMoves,
+      setOpponentMoves,
+      addMove2,
    ]);
 
-   return { opponentMoves, ownMoves, error, addMove };
+   return { opponentMoves, ownMoves, error, addMove, addMove2 };
 }

@@ -59,14 +59,13 @@ export class GameDB {
 
    async create(data: CreateGameArgs) {
       const id = generateGameId();
-      const newGame = await prisma.game.create({
+      await prisma.game.create({
          data: {
             id,
             ...data,
             state: GameState.WAITING_FOR_PLAYER,
          },
       });
-      console.log("Created new game", newGame);
       return id;
    }
 
@@ -100,12 +99,19 @@ export class GameDB {
          },
          select: defaultGameArgs.select,
       });
-      console.log(game);
       return game;
    }
 
    async startGame({ gameId, playerIds }: { gameId: string; playerIds: string[] }) {
       const turn = playerIds[Math.round(Math.random())];
-      await this.update({ gameId, currentTurn: turn, state: GameState.PLAYING });
+      await prisma.game.update({
+         where: { id: gameId },
+         data: {
+            currentTurn: turn,
+            state: GameState.PLAYING,
+            player1Ready: true,
+            player2Ready: true,
+         },
+      });
    }
 }
