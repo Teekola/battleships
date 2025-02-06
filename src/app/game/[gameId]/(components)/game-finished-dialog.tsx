@@ -26,6 +26,8 @@ export function GameFinishedDialog({ initialGame }: { initialGame: Game }) {
    const winnerName = winnerId === game.player1Id ? game.player1Name : game.player2Name;
    const opponentName = playerId === game.player1Id ? game.player2Name : game.player2Name;
    const isOpen = game.state === GameState.FINISHED;
+   const opponentPlayAgain =
+      playerId === game.player1Id ? game.player2PlayAgain : game.player1PlayAgain;
 
    if (!hasHydrated) return null;
 
@@ -49,7 +51,7 @@ export function GameFinishedDialog({ initialGame }: { initialGame: Game }) {
                   <p>{winnerName} is the lucky winner!</p>
                )}
 
-               <p>{opponentName} wants to play again!</p>
+               {opponentPlayAgain && <p>{opponentName} wants to play again!</p>}
             </div>
             <DialogFooter>
                <div className="flex w-full flex-wrap gap-2">

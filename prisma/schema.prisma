@@ -9,26 +9,28 @@ datasource db {
 }
 
 model Game {
-   id            String         @id
-   player1Id     String?
-   player1Name   String?
-   player1Ready  Boolean?
-   player2Id     String?
-   player2Name   String?
-   player2Ready  Boolean?
-   currentTurn   String?
-   state         GameState
-   gameEndReason GameEndReason?
-   boardSize     Int
-   carriers      Int
-   battleships   Int
-   cruisers      Int
-   submarines    Int
-   destroyers    Int
-   createdAt     DateTime       @default(now())
-   updatedAt     DateTime       @updatedAt
-   PlacedShip    PlacedShip[]
-   Move          Move[]
+   id               String         @id
+   player1Id        String?
+   player1Name      String?
+   player1Ready     Boolean?
+   player2Id        String?
+   player2Name      String?
+   player2Ready     Boolean?
+   player1PlayAgain Boolean?
+   player2PlayAgain Boolean?
+   currentTurn      String?
+   state            GameState
+   gameEndReason    GameEndReason?
+   boardSize        Int
+   carriers         Int
+   battleships      Int
+   cruisers         Int
+   submarines       Int
+   destroyers       Int
+   createdAt        DateTime       @default(now())
+   updatedAt        DateTime       @updatedAt
+   PlacedShip       PlacedShip[]
+   Move             Move[]
 }
 
 enum GameState {
@@ -46,7 +48,7 @@ enum GameEndReason {
 
 model PlacedShip {
    id          Int             @id @default(autoincrement())
-   game        Game            @relation(fields: [gameId], references: [id])
+   game        Game            @relation(fields: [gameId], references: [id], onDelete: Cascade)
    gameId      String
    playerId    String
    shipId      String
@@ -61,7 +63,7 @@ model PlacedShip {
 
 model Move {
    id        Int      @id @default(autoincrement())
-   game      Game     @relation(fields: [gameId], references: [id])
+   game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
    gameId    String
    playerId  String
    x         Int

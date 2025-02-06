@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/utils/db";
-import { UpdateGameArgs } from "@/utils/game-db";
+import { RestartGameArgs, UpdateGameArgs } from "@/utils/game-db";
 import { CreateMoveArgs } from "@/utils/move-db";
 import { GetShipsArgs, PlaceShipsArgs, RemoveShipsArgs } from "@/utils/placed-ship-db";
 
@@ -15,6 +15,10 @@ export async function removePlayersShips(data: RemoveShipsArgs) {
 
 export async function startGame(data: { gameId: string; playerIds: string[] }) {
    await db.game.startGame(data);
+}
+
+export async function restartGame(data: RestartGameArgs) {
+   await db.game.restartGame(data);
 }
 
 export async function getPlacedShips(data: GetShipsArgs) {
