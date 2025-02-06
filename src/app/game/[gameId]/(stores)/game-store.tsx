@@ -18,6 +18,7 @@ export type GameStoreState = {
 };
 
 export type GameStoreActions = {
+   reset: () => void;
    setGame: (g: Game) => void;
    setCurrentTurn: (playerId: string) => void;
    setOwnShipsRemaining: (n: number) => void;
@@ -62,6 +63,7 @@ export const defaultInitState: GameStoreState = {
 export function createGameStore(initState: GameStoreState = defaultInitState) {
    return createStore<GameStore>((set, get) => ({
       ...initState,
+      reset: () => set(() => ({ ...initState })),
       setGame: (g) => set((state) => ({ ...state, game: g })),
       setCurrentTurn: (playerId) => set((state) => ({ ...state, currentTurn: playerId })),
       setOwnHitsRemaining: (n) => set((state) => ({ ...state, ownHitsRemaining: n })),

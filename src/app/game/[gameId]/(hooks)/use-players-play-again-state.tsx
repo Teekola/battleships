@@ -25,12 +25,13 @@ async function updatePlayerPlayAgain({
 export function usePlayersPlayAgainState(initialGame: Readonly<Game>) {
    const { game, error } = useGame(initialGame);
    const { playerId, hasHydrated } = usePlayer();
-   const winnerId = useGameStore((s) => s.winnerId);
+   const winnerId = useGameStore((s) => s.winnerId) ?? initialGame.winnerId;
    const isPlayer1 = playerId === game.player1Id;
    const initialIsPlayAgain = Boolean(isPlayer1 ? game.player1PlayAgain : game.player2PlayAgain);
    const initialIsOpponentPlayAgain = Boolean(
       isPlayer1 ? game.player2PlayAgain : game.player1PlayAgain
    );
+   const resetStore = useGameStore((s) => s.reset);
    const router = useRouter();
    const winnerName = winnerId === game.player1Id ? game.player1Name : game.player2Name;
    const opponentName = playerId === game.player1Id ? game.player2Name : game.player1Name;
@@ -65,10 +66,9 @@ export function usePlayersPlayAgainState(initialGame: Readonly<Game>) {
       if (!hasHydrated) return;
       (async () => {
          if (isPlayAgain && isOpponentPlayAgain && game.player1Id && game.player2Id) {
+            resetStore();
             await restartGame({
                gameId: game.id,
-               player1Id: game.player1Id,
-               player2Id: game.player2Id,
             });
             router.push(`/game/${game.id}/ship-placement`);
          }
@@ -81,6 +81,7 @@ export function usePlayersPlayAgainState(initialGame: Readonly<Game>) {
       game.player1Id,
       game.player2Id,
       router,
+      resetStore,
    ]);
 
    return { error, winnerName, opponentName, isPlayAgain, isOpponentPlayAgain, updatePlayAgain };

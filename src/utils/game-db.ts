@@ -14,6 +14,7 @@ const defaultGameArgs = Prisma.validator<Prisma.GameDefaultArgs>()({
       player2Ready: true,
       player1PlayAgain: true,
       player2PlayAgain: true,
+      winnerId: true,
       state: true,
       gameEndReason: true,
       currentTurn: true,
@@ -59,8 +60,6 @@ export interface UpdateGameArgs {
 
 export interface RestartGameArgs {
    gameId: string;
-   player1Id: string;
-   player2Id: string;
 }
 
 export class GameDB {
@@ -121,29 +120,27 @@ export class GameDB {
       return game;
    }
 
-   async restartGame({ gameId, player1Id, player2Id }: RestartGameArgs) {
-      const turn = [player1Id, player2Id][Math.round(Math.random())];
+   async restartGame({ gameId }: RestartGameArgs) {
+      const psDeletePromise = prisma.placedShip.deleteMany({
+         where: { gameId },
+      });
+      const moveDeletePromise = prisma.move.deleteMany({
+         where: { gameId },
+      });
+      await Promise.all([psDeletePromise, moveDeletePromise]);
 
-      await prisma.$transaction([
-         prisma.placedShip.deleteMany({
-            where: { gameId },
-         }),
-         prisma.move.deleteMany({
-            where: { gameId },
-         }),
-         prisma.game.update({
-            where: { id: gameId },
-            data: {
-               currentTurn: turn,
-               state: GameState.SHIP_PLACEMENT,
-               gameEndReason: null,
-               player1Ready: false,
-               player2Ready: false,
-               player1PlayAgain: false,
-               player2PlayAgain: false,
-            },
-         }),
-      ]);
+      const game = await prisma.game.update({
+         where: { id: gameId },
+         data: {
+            state: GameState.SHIP_PLACEMENT,
+            gameEndReason: null,
+            player1Ready: false,
+            player2Ready: false,
+            player1PlayAgain: false,
+            player2PlayAgain: false,
+         },
+      });
+      console.log(game);
    }
 
    async startGame({ gameId, playerIds }: { gameId: string; playerIds: string[] }) {

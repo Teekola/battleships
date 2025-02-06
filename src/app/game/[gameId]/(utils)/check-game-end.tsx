@@ -21,6 +21,9 @@ export async function checkGameEnd({
    ownMoves: MoveDBT[];
    opponentMoves: MoveDBT[];
 }) {
+   if (ownMoves.length < 2 && opponentMoves.length < 2) {
+      return { gameEndReason: null, winnerId: null, gameState: GameState.PLAYING };
+   }
    // Both have moved equal number of turns and both have 0 hits left, it is a tie
    if (
       opponentHitsRemaining < 1 &&

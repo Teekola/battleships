@@ -18,6 +18,7 @@ model Game {
    player2Ready     Boolean?
    player1PlayAgain Boolean?
    player2PlayAgain Boolean?
+   winnerId         String?
    currentTurn      String?
    state            GameState
    gameEndReason    GameEndReason?

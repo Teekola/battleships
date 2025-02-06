@@ -10,6 +10,8 @@ import { useGameStore } from "../(stores)/game-store-provider";
 export function useGame(initialGame: Readonly<Game>) {
    const game = useGameStore((s) => s.game) ?? initialGame;
    const currentTurn = useGameStore((s) => s.currentTurn) ?? initialGame.currentTurn;
+   const winnerId = useGameStore((s) => s.winnerId) ?? initialGame.winnerId;
+   const setWinnerId = useGameStore((s) => s.setWinnerId);
    const setCurrentTurn = useGameStore((s) => s.setCurrentTurn);
    const setGame = useGameStore((s) => s.setGame);
 
@@ -48,6 +50,7 @@ export function useGame(initialGame: Readonly<Game>) {
                   const game = { ...payload.new } as Game;
                   setGame(game);
                   setCurrentTurn(game.currentTurn ?? "");
+                  setWinnerId(game.winnerId ?? "");
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
                   setError(`Game ${initialGame.id} has been deleted.`);
@@ -59,7 +62,7 @@ export function useGame(initialGame: Readonly<Game>) {
       return () => {
          supabase.removeChannel(channel);
       };
-   }, [initialGame.id, setGame, setCurrentTurn]);
+   }, [initialGame.id, setGame, setCurrentTurn, setWinnerId]);
 
-   return { game, currentTurn, error };
+   return { game, currentTurn, winnerId, error };
 }
