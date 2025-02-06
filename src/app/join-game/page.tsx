@@ -8,7 +8,7 @@ export default function JoinGamePage() {
          <div className="mx-auto max-w-xl px-4 py-2">
             <BackButtonLink href="/" label="Back" />
          </div>
-         <div className="flex h-[calc(100%-52px)] flex-col items-center justify-center gap-4 p-4">
+         <div className="flex h-[calc(100%-256px)] flex-col items-center justify-center gap-4 p-4">
             <h1 className="text-2xl font-bold">Join Game</h1>
             <JoinGameForm />
          </div>
