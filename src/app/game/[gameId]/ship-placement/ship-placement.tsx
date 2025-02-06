@@ -323,7 +323,7 @@ export function ShipPlacementView({
 
    return (
       <div className="p-4">
-         <h1 className="text-2xl font-bold">Place Your Ships</h1>
+         <h1 className="mb-2 font-bold sm:text-2xl">Place Your Ships</h1>
          <DndContext
             id={id}
             sensors={sensors}

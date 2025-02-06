@@ -110,52 +110,47 @@ export function Game({
    return (
       <>
          <GameFinishedDialog initialGame={initialGame} />
-         <div>
-            <div className="mx-auto max-w-5xl p-2">
-               <p className={cn(currentTurn === opponentId && "animate-pulse")}>
-                  {currentTurn === playerId ? "Your turn!" : "Waiting for opponent to play..."}
-               </p>
-               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <section
-                     className={cn(
-                        currentTurn === playerId && "order-2 w-1/3 sm:order-1 sm:w-full"
-                     )}
-                  >
-                     <h2 className="mb-1 text-lg font-bold">Your Board</h2>
 
-                     <OwnGameBoard
-                        size={game.boardSize}
-                        moves={opponentMoves}
-                        placedShips={convertPlacedShipsDBTToPlacedShip(ownShips)}
-                     />
-                     <p>{ownShipsRemaining} ships remaining</p>
-                     {opponentHitsRemaining === 1 &&
-                        ownHitsRemaining === 0 &&
-                        opponentMoves.length < ownMoves.length && (
-                           <p>Opponent can still tie the game with a hit!</p>
-                        )}
-                  </section>
-                  <section
-                     className={cn(
-                        currentTurn === playerId && "order-1 sm:order-2",
-                        currentTurn === opponentId && "order-1 w-1/3 sm:order-2 sm:w-full"
-                     )}
-                  >
-                     <h2 className="mb-1 text-lg font-bold">Opponent&apos;s Board</h2>
-                     <OpponentGameBoard
-                        hitCoordinate={hitCoordinate}
-                        size={game.boardSize}
-                        placedShips={convertPlacedShipsDBTToPlacedShip(opponentShips)}
-                        moves={ownMoves}
-                     />
-                     <p>{opponentShipsRemaining} ships remaining</p>
+         <p className={cn(currentTurn === opponentId && "animate-pulse")}>
+            {currentTurn === playerId ? "Your turn!" : "Waiting for opponent to play..."}
+         </p>
+         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <section
+               className={cn(currentTurn === playerId && "order-2 w-1/3 sm:order-1 sm:w-full")}
+            >
+               <h2 className="mb-1 text-lg font-bold">Your Board</h2>
 
-                     {ownHitsRemaining === 1 &&
-                        opponentHitsRemaining === 0 &&
-                        ownMoves.length < opponentMoves.length && <p>Hit to tie the game!</p>}
-                  </section>
-               </div>
-            </div>
+               <OwnGameBoard
+                  size={game.boardSize}
+                  moves={opponentMoves}
+                  placedShips={convertPlacedShipsDBTToPlacedShip(ownShips)}
+               />
+               <p>{ownShipsRemaining} ships remaining</p>
+               {opponentHitsRemaining === 1 &&
+                  ownHitsRemaining === 0 &&
+                  opponentMoves.length < ownMoves.length && (
+                     <p>Opponent can still tie the game with a hit!</p>
+                  )}
+            </section>
+            <section
+               className={cn(
+                  currentTurn === playerId && "order-1 sm:order-2",
+                  currentTurn === opponentId && "order-1 w-1/3 sm:order-2 sm:w-full"
+               )}
+            >
+               <h2 className="mb-1 text-lg font-bold">Opponent&apos;s Board</h2>
+               <OpponentGameBoard
+                  hitCoordinate={hitCoordinate}
+                  size={game.boardSize}
+                  placedShips={convertPlacedShipsDBTToPlacedShip(opponentShips)}
+                  moves={ownMoves}
+               />
+               <p>{opponentShipsRemaining} ships remaining</p>
+
+               {ownHitsRemaining === 1 &&
+                  opponentHitsRemaining === 0 &&
+                  ownMoves.length < opponentMoves.length && <p>Hit to tie the game!</p>}
+            </section>
          </div>
       </>
    );
