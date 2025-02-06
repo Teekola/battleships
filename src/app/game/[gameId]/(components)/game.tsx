@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
@@ -48,7 +48,8 @@ export function Game({
    const ownShips = isPlayer1 ? initialPlayer1PlacedShips : initialPlayer2PlacedShips;
    const opponentShips = isPlayer1 ? initialPlayer2PlacedShips : initialPlayer1PlacedShips;
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
-   const [hasPlayed, setHasPlayed] = useState(false);
+   const hasPlayed = useGameStore((s) => s.hasPlayed);
+   const setHasPlayed = useGameStore((s) => s.setHasPlayed);
    useCheckGameEnd(initialGame);
    const opponentShipsCoordinates = getAllShipsCoordinates({
       placedShips: convertPlacedShipsDBTToPlacedShip(opponentShips),
@@ -58,7 +59,7 @@ export function Game({
 
    const hitCoordinate = useCallback(
       async (coordinates: Coordinates) => {
-         if (currentTurn !== playerId || hasPlayed) return;
+         if (game.currentTurn !== playerId || hasPlayed) return;
 
          setHasPlayed(true);
 
@@ -85,17 +86,15 @@ export function Game({
             y: coordinates.y,
          });
 
-         setTimeout(async () => {
-            await updateGame({ gameId: game.id, currentTurn: opponentId });
-            setHasPlayed(false);
-         }, 1500);
+         await updateGame({ gameId: game.id, currentTurn: opponentId });
       },
       [
-         currentTurn,
+         game.currentTurn,
+         game.id,
          playerId,
          hasPlayed,
+         setHasPlayed,
          addMove,
-         game.id,
          opponentShipsCoordinates,
          playShipHitSound,
          playWaterHitSound,

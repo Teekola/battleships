@@ -15,6 +15,7 @@ export type GameStoreState = {
    opponentShipsRemaining?: number;
    ownHitsRemaining?: number;
    opponentHitsRemaining?: number;
+   hasPlayed: boolean;
 };
 
 export type GameStoreActions = {
@@ -29,6 +30,7 @@ export type GameStoreActions = {
    setGameEndReason: (r: GameEndReason) => void;
    setOwnMoves: (moves: MoveDBT[]) => void;
    setOpponentMoves: (moves: MoveDBT[]) => void;
+   setHasPlayed: (hasPlayed: boolean) => void;
    addMove: ({
       id,
       gameId,
@@ -58,6 +60,7 @@ export const defaultInitState: GameStoreState = {
    currentTurn: "",
    ownMoves: [],
    opponentMoves: [],
+   hasPlayed: false,
 };
 
 export function createGameStore(initState: GameStoreState = defaultInitState) {
@@ -90,5 +93,6 @@ export function createGameStore(initState: GameStoreState = defaultInitState) {
 
          return { ownMoves, opponentMoves, ownHitsRemaining, opponentHitsRemaining };
       },
+      setHasPlayed: (hasPlayed) => set((state) => ({ ...state, hasPlayed })),
    }));
 }
