@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 
+import { AudioStoreProvider } from "./game/[gameId]/(stores)/audio-store-provider";
 import { GameStoreProvider } from "./game/[gameId]/(stores)/game-store-provider";
 import "./globals.css";
 
@@ -24,7 +25,9 @@ export default function RootLayout({
          <body
             className={`${geistSans.variable} h-screen min-h-screen bg-background font-sans antialiased`}
          >
-            <GameStoreProvider>{children}</GameStoreProvider>
+            <AudioStoreProvider>
+               <GameStoreProvider>{children}</GameStoreProvider>
+            </AudioStoreProvider>
          </body>
       </html>
    );
