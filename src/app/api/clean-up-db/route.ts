@@ -1,0 +1,12 @@
+import { NextResponse } from "next/server";
+
+import { db } from "@/utils/db";
+
+export async function POST() {
+   const result = await db.game.cleanUpDatabase();
+   if (result.success) {
+      return NextResponse.json({ message: result.message }, { status: 200 });
+   }
+
+   return NextResponse.json({ message: result.message }, { status: 500 });
+}

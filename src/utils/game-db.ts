@@ -129,7 +129,7 @@ export class GameDB {
       });
       await Promise.all([psDeletePromise, moveDeletePromise]);
 
-      const game = await prisma.game.update({
+      await prisma.game.update({
          where: { id: gameId },
          data: {
             state: GameState.SHIP_PLACEMENT,
@@ -140,7 +140,6 @@ export class GameDB {
             player2PlayAgain: false,
          },
       });
-      console.log(game);
    }
 
    async startGame({ gameId, playerIds }: { gameId: string; playerIds: string[] }) {
@@ -154,5 +153,59 @@ export class GameDB {
             player2Ready: true,
          },
       });
+   }
+
+   async cleanUpDatabase() {
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+      try {
+         // Get games older than 6 hours or older than 1 hours that are finished or waiting for player
+         const gamesToDelete = await prisma.game.findMany({
+            where: {
+               OR: [
+                  {
+                     updatedAt: {
+                        lte: sixHoursAgo,
+                     },
+                  },
+                  {
+                     AND: [
+                        {
+                           updatedAt: {
+                              lte: oneHourAgo,
+                           },
+                        },
+                        {
+                           state: {
+                              in: [GameState.FINISHED, GameState.WAITING_FOR_PLAYER],
+                           },
+                        },
+                     ],
+                  },
+               ],
+            },
+         });
+
+         if (gamesToDelete.length === 0) {
+            return { success: true, message: "No games to delete" };
+         }
+
+         // Delete related records and the games themselves
+         const deleted = await prisma.game.deleteMany({
+            where: {
+               id: {
+                  in: gamesToDelete.map((game) => game.id),
+               },
+            },
+         });
+         return {
+            success: true,
+            message: `${deleted.count} games and related records cleaned up successfully`,
+         };
+      } catch (error) {
+         console.error(error);
+         return { success: false, message: "Internal Server Error" };
+      }
    }
 }
