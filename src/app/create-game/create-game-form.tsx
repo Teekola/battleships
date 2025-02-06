@@ -42,10 +42,8 @@ export function CreateGameForm() {
 
    async function onSubmit(data: CreateGameFormData) {
       setIsSubmitting(true);
-      console.log(data);
       const gameId = await createGame({ ...data, player1Id: playerId });
       router.push(`/game/${gameId}/join`);
-      setIsSubmitting(false);
    }
 
    if (isSubmitting) {
@@ -99,11 +97,19 @@ export function CreateGameForm() {
                   options={shipAmountOptionsByShipType.destroyer}
                />
             </section>
-
+            <RootError />
             <Button type="submit">Create</Button>
          </form>
       </Form>
    );
+}
+
+function RootError() {
+   const form = useFormContext();
+   const message = form.formState.errors[""]?.message;
+
+   if (!message) return null;
+   return <p className="text-sm text-red-500">{message + ""}</p>;
 }
 
 interface ShipAmountInputProps<T> extends NumberSelectInputProps<T> {

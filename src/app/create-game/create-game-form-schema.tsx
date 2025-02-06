@@ -57,7 +57,7 @@ export const formSchema = z
       submarines: z.number().min(shipLimits.submarine.min).max(shipLimits.submarine.max),
       destroyers: z.number().min(shipLimits.destroyer.min).max(shipLimits.destroyer.max),
    })
-   .refine((v) => {
+   .superRefine((v, ctx) => {
       const { boardSize, carriers, battleships, cruisers, submarines, destroyers } = v;
 
       const boardArea = boardSize * boardSize;
@@ -70,13 +70,21 @@ export const formSchema = z
          destroyer: destroyers,
       });
 
+      if (shipArea < 2) {
+         return ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Select at least one ship.",
+         });
+      }
+
       const shipDensity = shipArea / boardArea;
 
       if (shipDensity > MAX_SHIP_DENSITY) {
-         return false;
+         return ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "The area of the ships is too high for the selected board size.",
+         });
       }
-
-      return true;
    });
 
 export type CreateGameFormData = z.infer<typeof formSchema>;
