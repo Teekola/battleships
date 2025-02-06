@@ -105,14 +105,14 @@ export class GameDB {
                     ...(playerName && { player1Name: playerName }),
                     ...(playerId && { player1Id: playerId }),
                     player1Ready: playerReady ?? false,
-                    ...(playAgain && { player1PlayAgain: playAgain }),
+                    player1PlayAgain: playAgain ?? false,
                     ...rest,
                  }
                : {
                     ...(playerName && { player2Name: playerName }),
                     ...(playerId && { player2Id: playerId }),
                     player2Ready: playerReady ?? false,
-                    ...(playAgain && { player2PlayAgain: playAgain }),
+                    player2PlayAgain: playAgain ?? false,
                     ...rest,
                  }),
          },
@@ -125,6 +125,12 @@ export class GameDB {
       const turn = [player1Id, player2Id][Math.round(Math.random())];
 
       await prisma.$transaction([
+         prisma.placedShip.deleteMany({
+            where: { gameId },
+         }),
+         prisma.move.deleteMany({
+            where: { gameId },
+         }),
          prisma.game.update({
             where: { id: gameId },
             data: {
@@ -136,12 +142,6 @@ export class GameDB {
                player1PlayAgain: false,
                player2PlayAgain: false,
             },
-         }),
-         prisma.placedShip.deleteMany({
-            where: { gameId },
-         }),
-         prisma.move.deleteMany({
-            where: { gameId },
          }),
       ]);
    }

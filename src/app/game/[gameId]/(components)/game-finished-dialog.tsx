@@ -13,23 +13,34 @@ import {
    DialogTitle,
 } from "@/components/ui/dialog";
 import { usePlayer } from "@/hooks/use-player";
+import { cn } from "@/lib/utils";
 import { Game } from "@/utils/game-db";
 
 import { useGame } from "../(hooks)/use-game";
+import { usePlayersPlayAgainState } from "../(hooks)/use-players-play-again-state";
 import { useGameStore } from "../(stores)/game-store-provider";
 
 export function GameFinishedDialog({ initialGame }: { initialGame: Game }) {
    const { game } = useGame(initialGame);
    const winnerId = useGameStore((s) => s.winnerId);
    const { playerId, hasHydrated } = usePlayer();
+   const { isPlayAgain, isOpponentPlayAgain, updatePlayAgain, winnerName, opponentName } =
+      usePlayersPlayAgainState(initialGame);
 
-   const winnerName = winnerId === game.player1Id ? game.player1Name : game.player2Name;
-   const opponentName = playerId === game.player1Id ? game.player2Name : game.player2Name;
-   const isOpen = game.state === GameState.FINISHED;
-   const opponentPlayAgain =
-      playerId === game.player1Id ? game.player2PlayAgain : game.player1PlayAgain;
+   const isRestarting = game.state === GameState.SHIP_PLACEMENT;
+   const isOpen = game.state === GameState.FINISHED && !isRestarting;
 
    if (!hasHydrated) return null;
+
+   if (isRestarting) {
+      return (
+         <Dialog open={true}>
+            <DialogContent hideCloseButton className="text-center">
+               <p>Restarting...</p>
+            </DialogContent>
+         </Dialog>
+      );
+   }
 
    return (
       <Dialog open={isOpen}>
@@ -51,11 +62,17 @@ export function GameFinishedDialog({ initialGame }: { initialGame: Game }) {
                   <p>{winnerName} is the lucky winner!</p>
                )}
 
-               {opponentPlayAgain && <p>{opponentName} wants to play again!</p>}
+               {isOpponentPlayAgain && <p>{opponentName} wants to play again!</p>}
             </div>
             <DialogFooter>
                <div className="flex w-full flex-wrap gap-2">
-                  <Button className="w-full">Play again?</Button>
+                  <Button
+                     className={cn("w-full", isPlayAgain && "animate-pulse")}
+                     variant={isPlayAgain ? "green" : "default"}
+                     onClick={() => updatePlayAgain(isPlayAgain ? false : true)}
+                  >
+                     Play again?
+                  </Button>
                   <Button variant="outline" asChild className="w-full">
                      <Link href="/">Quit</Link>
                   </Button>
