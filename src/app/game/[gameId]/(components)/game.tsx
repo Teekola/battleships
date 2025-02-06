@@ -114,9 +114,12 @@ export function Game({
          <p className={cn(currentTurn === opponentId && "animate-pulse")}>
             {currentTurn === playerId ? "Your turn!" : "Waiting for opponent to play..."}
          </p>
-         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+         <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
             <section
-               className={cn(currentTurn === playerId && "order-2 w-1/3 sm:order-1 sm:w-full")}
+               className={cn(
+                  "absolute w-full opacity-100 transition-opacity duration-500 sm:static",
+                  currentTurn === playerId && "opacity-0 sm:opacity-75"
+               )}
             >
                <h2 className="mb-1 text-lg font-bold">Your Board</h2>
 
@@ -134,8 +137,8 @@ export function Game({
             </section>
             <section
                className={cn(
-                  currentTurn === playerId && "order-1 sm:order-2",
-                  currentTurn === opponentId && "order-1 w-1/3 sm:order-2 sm:w-full"
+                  "absolute w-full opacity-100 transition-opacity duration-500 sm:static",
+                  currentTurn === opponentId && "opacity-0 sm:opacity-75"
                )}
             >
                <h2 className="mb-1 text-lg font-bold">Opponent&apos;s Board</h2>
