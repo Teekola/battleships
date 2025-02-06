@@ -8,10 +8,12 @@ import { Game as GameT } from "@/utils/game-db";
 import { AllMovesByPlayerId } from "@/utils/move-db";
 import { PlacedShipDBT, convertPlacedShipsDBTToPlacedShip } from "@/utils/placed-ship-db";
 
+import { useAudio } from "../(hooks)/use-audio";
 import { useCheckGameEnd } from "../(hooks)/use-check-game-end";
 import { useGame } from "../(hooks)/use-game";
 import { useMoves } from "../(hooks)/use-moves";
 import { useGameStore } from "../(stores)/game-store-provider";
+import { getAllShipsCoordinates } from "../(utils)/get-all-ships-coordinates";
 import { Coordinates } from "../(utils)/types";
 import { makeMove } from "../actions";
 import { updateGame } from "../actions";
@@ -31,7 +33,12 @@ export function Game({
    initialPlayer2PlacedShips: PlacedShipDBT[];
 }>) {
    const { game, currentTurn } = useGame(initialGame);
-   const { ownMoves, opponentMoves, addMove } = useMoves({ initialMoves, initialGame });
+   const { ownMoves, opponentMoves, addMove } = useMoves({
+      initialMoves,
+      initialGame,
+      initialPlayer1PlacedShips,
+      initialPlayer2PlacedShips,
+   });
    const ownShipsRemaining = useGameStore((s) => s.ownShipsRemaining);
    const opponentShipsRemaining = useGameStore((s) => s.opponentShipsRemaining);
    const ownHitsRemaining = useGameStore((s) => s.ownHitsRemaining);
@@ -43,6 +50,11 @@ export function Game({
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
    const [hasPlayed, setHasPlayed] = useState(false);
    useCheckGameEnd(initialGame);
+   const opponentShipsCoordinates = getAllShipsCoordinates({
+      placedShips: convertPlacedShipsDBTToPlacedShip(opponentShips),
+   });
+
+   const { playWaterHitSound, playShipHitSound } = useAudio();
 
    const hitCoordinate = useCallback(
       async (coordinates: Coordinates) => {
@@ -59,6 +71,13 @@ export function Game({
             isOwnMove: true,
          });
 
+         const isHit = opponentShipsCoordinates.has(`${coordinates.x},${coordinates.y}`);
+
+         const audioFunction = isHit ? playShipHitSound : playWaterHitSound;
+         setTimeout(() => {
+            audioFunction();
+         }, 150);
+
          await makeMove({
             gameId: game.id,
             playerId,
@@ -71,7 +90,17 @@ export function Game({
             setHasPlayed(false);
          }, 1500);
       },
-      [currentTurn, playerId, hasPlayed, game, addMove, opponentId]
+      [
+         currentTurn,
+         playerId,
+         hasPlayed,
+         addMove,
+         game.id,
+         opponentShipsCoordinates,
+         playShipHitSound,
+         playWaterHitSound,
+         opponentId,
+      ]
    );
 
    if (!hasHydrated) {

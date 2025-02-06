@@ -1,24 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { usePlayer } from "@/hooks/use-player";
 import { supabase } from "@/lib/supabase";
 import { Game } from "@/utils/game-db";
 import { AllMovesByPlayerId, MoveDBT, movesToMovesByPlayerId } from "@/utils/move-db";
+import { PlacedShipDBT, convertPlacedShipsDBTToPlacedShip } from "@/utils/placed-ship-db";
 
 import { useGameStore } from "../(stores)/game-store-provider";
+import { getAllShipsCoordinates } from "../(utils)/get-all-ships-coordinates";
+import { useAudio } from "./use-audio";
 
 export function useMoves({
    initialMoves,
    initialGame,
-}: Readonly<{ initialMoves: AllMovesByPlayerId; initialGame: Game }>) {
+   initialPlayer1PlacedShips,
+   initialPlayer2PlacedShips,
+}: Readonly<{
+   initialMoves: AllMovesByPlayerId;
+   initialGame: Game;
+   initialPlayer1PlacedShips: PlacedShipDBT[];
+   initialPlayer2PlacedShips: PlacedShipDBT[];
+}>) {
    const game = useGameStore((s) => s.game) ?? initialGame;
    const { playerId, hasHydrated } = usePlayer();
    const isPlayer1 = game.player1Id === playerId;
    const opponentId = (isPlayer1 ? game.player2Id : game.player1Id)!;
    const ownMovesStored = useGameStore((s) => s.ownMoves);
    const opponentMovesStored = useGameStore((s) => s.opponentMoves);
+   const ownShips = isPlayer1 ? initialPlayer1PlacedShips : initialPlayer2PlacedShips;
+   const ownShipsCoordinates = useMemo(
+      () =>
+         getAllShipsCoordinates({
+            placedShips: convertPlacedShipsDBTToPlacedShip(ownShips),
+         }),
+      [ownShips]
+   );
+   const { playWaterHitSound, playShipHitSound } = useAudio();
 
    const initialPlayer1Moves = initialMoves[game.player1Id!] ?? [];
    const initialPlayer2Moves = initialMoves[game.player2Id!] ?? [];
@@ -90,6 +109,12 @@ export function useMoves({
                         ...move,
                         isOwnMove: false,
                      });
+                     const isHit = ownShipsCoordinates.has(`${move.x},${move.y}`);
+
+                     const audioFunction = isHit ? playShipHitSound : playWaterHitSound;
+                     setTimeout(() => {
+                        audioFunction();
+                     }, 150);
                   }
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
@@ -113,6 +138,9 @@ export function useMoves({
       addMove,
       setGameEndReason,
       setWinnerId,
+      ownShipsCoordinates,
+      playShipHitSound,
+      playWaterHitSound,
    ]);
 
    return { opponentMoves, ownMoves, error, addMove, hasHydrated };
