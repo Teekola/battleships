@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { db } from "@/utils/db";
 
-export async function POST(req: Request) {
+export async function GET(req: Request) {
    if (req.headers.get("Authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
    }
