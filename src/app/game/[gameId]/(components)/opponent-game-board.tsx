@@ -47,7 +47,7 @@ export function OpponentGameBoard({
 
    return (
       <div
-         className="grid aspect-square w-full bg-blue-950"
+         className="grid aspect-square w-full rounded-lg bg-blue-950"
          style={{
             gridTemplateColumns: `repeat(${size}, 1fr)`,
             gridTemplateRows: `repeat(${size}, 1fr)`,
