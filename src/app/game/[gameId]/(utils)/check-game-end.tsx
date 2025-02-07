@@ -1,4 +1,4 @@
-import { GameEndReason, GameState } from "@prisma/client";
+import { GameEndReason, GameMode, GameState } from "@prisma/client";
 
 import { updateGame } from "../actions";
 
@@ -10,7 +10,9 @@ export async function checkGameEnd({
    opponentTurnsPlayed,
    opponentId,
    playerId,
+   gameMode,
 }: {
+   gameMode: GameMode;
    gameId: string;
    ownHitsRemaining: number; // How many hits the player needs to win
    opponentHitsRemaining: number; // How many hits the opponent needs to win
@@ -26,6 +28,36 @@ export async function checkGameEnd({
    console.log({ ownTurnsPlayed, opponentTurnsPlayed, ownHitsRemaining, opponentHitsRemaining });
 
    const bothHadEqualTurns = ownTurnsPlayed === opponentTurnsPlayed;
+
+   // Early finish in classic
+   if (gameMode === GameMode.CLASSIC && opponentHitsRemaining === 0 && ownHitsRemaining > 1) {
+      await updateGame({
+         gameId,
+         gameEndReason: GameEndReason.WIN,
+         winnerId: opponentId,
+         state: GameState.FINISHED,
+      });
+      return {
+         gameEndReason: GameEndReason.WIN,
+         winnerId: opponentId,
+         gameState: GameState.FINISHED,
+      };
+   }
+
+   // Early finish in classic
+   if (gameMode === GameMode.CLASSIC && ownHitsRemaining === 0 && opponentHitsRemaining > 1) {
+      await updateGame({
+         gameId,
+         gameEndReason: GameEndReason.WIN,
+         winnerId: playerId,
+         state: GameState.FINISHED,
+      });
+      return {
+         gameEndReason: GameEndReason.WIN,
+         winnerId: playerId,
+         gameState: GameState.FINISHED,
+      };
+   }
 
    // In both Classic and Rampage mode, when both have sunk all ships and played equal number eof turns, it is a TIE
    if (ownHitsRemaining === 0 && opponentHitsRemaining === 0 && bothHadEqualTurns) {

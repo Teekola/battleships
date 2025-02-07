@@ -61,6 +61,7 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
             gameId: initialGame.id,
             opponentId,
             playerId,
+            gameMode: initialGame.gameMode,
          });
 
          if (gameState === GameState.FINISHED) {
