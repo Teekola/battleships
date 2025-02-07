@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -24,12 +24,13 @@ async function updatePlayerReady({
 
 export function usePlayersReadyState(initialGame: Readonly<Game>) {
    const game = useGameStore((s) => s.game) ?? initialGame;
-   const { playerId } = usePlayer();
+   const { playerId, hasHydrated } = usePlayer();
    const isPlayer1 = playerId === game.player1Id;
    const initialIsReady = Boolean(isPlayer1 ? game.player1Ready : game.player2Ready);
    const initialIsOpponentReady = Boolean(isPlayer1 ? game.player2Ready : game.player1Ready);
    const winnerId = useGameStore((s) => s.winnerId) ?? initialGame.winnerId;
    const router = useRouter();
+   const timeout = useRef<NodeJS.Timeout | null>(null);
 
    const [isReady, setIsReady] = useState(initialIsReady);
    const [isOpponentReady, setIsOpponentReady] = useState(initialIsOpponentReady);
@@ -57,13 +58,32 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
    );
 
    useEffect(() => {
+      if (!hasHydrated) return;
+
       (async () => {
          if (isReady && isOpponentReady && game.player1Id && game.player2Id) {
-            await startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
-            router.push(`/game/${game.id}`);
+            if (isPlayer1) {
+               await startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
+            }
+            if (timeout.current) clearTimeout(timeout.current);
+            timeout.current = setTimeout(() => {
+               router.push(`/game/${game.id}`);
+            }, 300);
          }
       })();
-   }, [isReady, isOpponentReady, game.id, game.player1Id, game.player2Id, router]);
+      return () => {
+         if (timeout.current) clearTimeout(timeout.current);
+      };
+   }, [
+      hasHydrated,
+      isPlayer1,
+      isReady,
+      isOpponentReady,
+      game.id,
+      game.player1Id,
+      game.player2Id,
+      router,
+   ]);
 
    return { winnerId, isReady, isOpponentReady, updateIsReady };
 }
