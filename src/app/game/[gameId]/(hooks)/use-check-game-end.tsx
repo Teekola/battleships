@@ -24,14 +24,7 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
    const setWinnerId = useGameStore((s) => s.setWinnerId) ?? initialGame.winnerId;
    useEffect(() => {
       if (!hasHydrated) return;
-      console.log({
-         ownHitsRemaining,
-         opponentHitsRemaining,
-         playerId,
-         opponentId,
-         ownMoves,
-         opponentMoves,
-      });
+
       (async () => {
          const { gameState, gameEndReason, winnerId } = await checkGameEnd({
             ownHitsRemaining: ownHitsRemaining ?? 2,
