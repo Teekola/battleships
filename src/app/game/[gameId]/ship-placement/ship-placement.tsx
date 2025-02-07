@@ -276,26 +276,22 @@ export function ShipPlacementView({
    );
 
    const handleDragMove = useMemo(() => {
-      return throttle(
-         (e: DragMoveEvent) => {
-            if (!draggingId) return;
-            const { id } = e.over ?? {};
-            if (!id) {
-               return resetHoveredCells();
-            }
-            // Get current coordinates from the droppable id
-            const [x, y] = String(id).split("-").map(Number);
+      return throttle((e: DragMoveEvent) => {
+         if (!draggingId) return;
+         const { id } = e.over ?? {};
+         if (!id) {
+            return resetHoveredCells();
+         }
+         // Get current coordinates from the droppable id
+         const [x, y] = String(id).split("-").map(Number);
 
-            // Get size and orientation from the droppable data
-            const { size, orientation } = e.active.data.current as {
-               size: number;
-               orientation: ShipOrientation;
-            };
-            highlightPlacement({ x, y, size, orientation });
-         },
-         100,
-         { leading: true, trailing: true }
-      );
+         // Get size and orientation from the droppable data
+         const { size, orientation } = e.active.data.current as {
+            size: number;
+            orientation: ShipOrientation;
+         };
+         highlightPlacement({ x, y, size, orientation });
+      }, 100);
    }, [draggingId, highlightPlacement, resetHoveredCells]);
 
    const hasPlacedAllShips = checkIfHasPlacedAllShips(shipsToPlace);
