@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { usePlayer } from "@/hooks/use-player";
 import { supabase } from "@/lib/supabase";
@@ -20,6 +20,7 @@ export function useGame(initialGame: Readonly<Game>) {
    const setHasPlayed = useGameStore((s) => s.setHasPlayed);
    const { hasHydrated, playerId } = usePlayer();
    const isPlayer1 = playerId === game.player1Id;
+   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
    const [error, setError] = useState("");
 
@@ -57,17 +58,18 @@ export function useGame(initialGame: Readonly<Game>) {
 
                if (payload.eventType === "UPDATE") {
                   console.log("Game record changed:", payload);
-                  const game = { ...payload.new } as Game;
-                  setGame(game);
-                  setWinnerId(game.winnerId);
-                  setTimeout(() => {
-                     setCurrentTurn(game.currentTurn);
+                  const newGame = { ...payload.new } as Game;
+                  setGame(newGame);
+                  setWinnerId(newGame.winnerId);
+                  if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                  timeoutRef.current = setTimeout(() => {
+                     setCurrentTurn(newGame.currentTurn);
                      setHasPlayed(false);
                      setOwnTurnsPlayed(
-                        isPlayer1 ? game.player1PlayedTurns : game.player2PlayedTurns
+                        isPlayer1 ? newGame.player1PlayedTurns : newGame.player2PlayedTurns
                      );
                      setOpponentTurnsPlayed(
-                        isPlayer1 ? game.player2PlayedTurns : game.player1PlayedTurns
+                        isPlayer1 ? newGame.player2PlayedTurns : newGame.player1PlayedTurns
                      );
                   }, 1500);
                } else if (payload.eventType === "DELETE") {
@@ -80,6 +82,7 @@ export function useGame(initialGame: Readonly<Game>) {
 
       return () => {
          supabase.removeChannel(channel);
+         if (timeoutRef.current) clearTimeout(timeoutRef.current);
       };
    }, [
       hasHydrated,
