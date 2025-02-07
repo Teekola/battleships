@@ -88,7 +88,7 @@ export function useGameFinishedDialog(initialGame: Readonly<Game>) {
 
    const isFinished = game.state === GameState.FINISHED;
    const isRestarting = game.state === GameState.SHIP_PLACEMENT;
-   const isTie = game.gameEndReason !== "TIE";
+   const isTie = game.gameEndReason === "TIE";
 
    if (!hasHydrated) {
       return {

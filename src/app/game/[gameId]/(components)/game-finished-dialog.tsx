@@ -34,6 +34,8 @@ export function GameFinishedDialog({ initialGame }: { initialGame: Game }) {
       isTie,
    } = useGameFinishedDialog(initialGame);
 
+   console.log({ isFinished, isTie });
+
    if (!hasHydrated) return null;
    if (isFinished && !winnerId && !isTie) return null;
 
