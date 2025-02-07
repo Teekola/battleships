@@ -61,6 +61,7 @@ export function useGame(initialGame: Readonly<Game>) {
                   const newGame = { ...payload.new } as Game;
                   setGame(newGame);
                   setWinnerId(newGame.winnerId);
+                  // Clear the timeout here to prevent old timeout from overwriting a correct value temporarily and causing flicker
                   if (timeoutRef.current) clearTimeout(timeoutRef.current);
                   timeoutRef.current = setTimeout(() => {
                      setCurrentTurn(newGame.currentTurn);
