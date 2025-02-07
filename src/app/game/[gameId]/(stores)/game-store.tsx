@@ -6,7 +6,7 @@ import { MoveDBT } from "@/utils/move-db";
 
 export type GameStoreState = {
    game: Game | null;
-   currentTurn: string;
+   currentTurn: string | null;
    ownMoves: MoveDBT[];
    opponentMoves: MoveDBT[];
    winnerId: string | null;
@@ -21,7 +21,7 @@ export type GameStoreState = {
 export type GameStoreActions = {
    reset: () => void;
    setGame: (g: Game) => void;
-   setCurrentTurn: (playerId: string) => void;
+   setCurrentTurn: (playerId: string | null) => void;
    setOwnShipsRemaining: (n: number) => void;
    setOpponentShipsRemaining: (n: number) => void;
    setOwnHitsRemaining: (n: number) => void;

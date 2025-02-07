@@ -50,9 +50,9 @@ export function useGame(initialGame: Readonly<Game>) {
                if (payload.eventType === "UPDATE") {
                   const game = { ...payload.new } as Game;
                   setGame(game);
-                  setWinnerId(game.winnerId ?? null);
+                  setWinnerId(game.winnerId);
                   setTimeout(() => {
-                     setCurrentTurn(game.currentTurn ?? "");
+                     setCurrentTurn(game.currentTurn);
                      setHasPlayed(false);
                   }, 1500);
                } else if (payload.eventType === "DELETE") {
