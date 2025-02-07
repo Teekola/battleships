@@ -1,5 +1,6 @@
 "use client";
 
+import { GameMode } from "@prisma/client";
 import { z } from "zod";
 
 export const shipSizes = {
@@ -50,6 +51,7 @@ function calculateShipArea(ships: ShipToShipNumber) {
 
 export const formSchema = z
    .object({
+      gameMode: z.nativeEnum(GameMode),
       boardSize: z.number().min(5).max(10),
       carriers: z.number().min(shipLimits.carrier.min).max(shipLimits.carrier.max),
       battleships: z.number().min(shipLimits.battleship.min).max(shipLimits.battleship.max),

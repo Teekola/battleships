@@ -5,13 +5,14 @@ import { ComponentProps, PropsWithChildren, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { GameMode } from "@prisma/client";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { FieldValues, Path, useForm, useFormContext } from "react-hook-form";
 
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import { Button } from "@/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/select";
 
 import { createGame } from "./actions";
@@ -29,6 +30,7 @@ export function CreateGameForm() {
    const form = useForm<CreateGameFormData>({
       resolver: zodResolver(formSchema),
       defaultValues: {
+         gameMode: GameMode.CLASSIC,
          boardSize: 8,
          carriers: 1,
          battleships: 1,
@@ -59,13 +61,57 @@ export function CreateGameForm() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="flex w-full max-w-xs flex-col justify-between gap-4"
          >
-            <section className="flex flex-col gap-2">
-               <Label>Board Size</Label>
-               <NumberSelectInput<CreateGameFormData>
-                  className="mb-8"
-                  name="boardSize"
-                  options={boardSizeOptions}
+            <section className="flex flex-col gap-8">
+               <FormField
+                  control={form.control}
+                  name="gameMode"
+                  render={({ field }) => (
+                     <FormItem>
+                        <FormLabel>Game Mode</FormLabel>
+                        <div className="flex w-full flex-row items-center justify-between gap-2 rounded-lg">
+                           <FormControl>
+                              <Button
+                                 className={cn(
+                                    "w-full",
+                                    field.value === GameMode.CLASSIC && "border border-primary"
+                                 )}
+                                 type="button"
+                                 onClick={() => form.setValue("gameMode", GameMode.CLASSIC)}
+                                 variant={field.value === GameMode.CLASSIC ? "default" : "outline"}
+                              >
+                                 Classic
+                              </Button>
+                           </FormControl>
+                           <FormControl>
+                              <Button
+                                 className={cn(
+                                    "w-full",
+                                    field.value === GameMode.RAMPAGE && "border border-primary"
+                                 )}
+                                 type="button"
+                                 onClick={() => form.setValue("gameMode", GameMode.RAMPAGE)}
+                                 variant={field.value === GameMode.RAMPAGE ? "default" : "outline"}
+                              >
+                                 Rampage
+                              </Button>
+                           </FormControl>
+                        </div>
+                        <FormDescription>
+                           {field.value === GameMode.CLASSIC
+                              ? "Classic rules. Each player can hit once every round."
+                              : "Extended rules. You can hit again after a hit!"}
+                        </FormDescription>
+                     </FormItem>
+                  )}
                />
+               <div className="flex flex-col gap-2">
+                  <Label>Board Size</Label>
+                  <NumberSelectInput<CreateGameFormData>
+                     className="mb-8"
+                     name="boardSize"
+                     options={boardSizeOptions}
+                  />
+               </div>
             </section>
             <section className="flex flex-col gap-2">
                <h2 className="font-bold">Ships</h2>

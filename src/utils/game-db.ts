@@ -1,4 +1,4 @@
-import { GameEndReason, GameState, Prisma } from "@prisma/client";
+import { GameEndReason, GameMode, GameState, Prisma } from "@prisma/client";
 
 import { generateGameId } from "@/app/create-game/generate-game-id";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 const defaultGameArgs = Prisma.validator<Prisma.GameDefaultArgs>()({
    select: {
       id: true,
+      gameMode: true,
       player1Id: true,
       player2Id: true,
       player1Name: true,
@@ -30,6 +31,7 @@ const defaultGameArgs = Prisma.validator<Prisma.GameDefaultArgs>()({
 export type Game = Prisma.GameGetPayload<typeof defaultGameArgs>;
 
 export interface CreateGameArgs {
+   gameMode: GameMode;
    boardSize: number;
    player1Id: string;
    carriers: number;
@@ -41,6 +43,7 @@ export interface CreateGameArgs {
 
 export interface UpdateGameArgs {
    gameId: string;
+   gameMode?: GameMode;
    playerName?: string;
    playerId?: string;
    isPlayer1?: boolean;

@@ -10,6 +10,7 @@ datasource db {
 
 model Game {
    id               String         @id
+   gameMode         GameMode
    player1Id        String?
    player1Name      String?
    player1Ready     Boolean?
@@ -32,6 +33,11 @@ model Game {
    updatedAt        DateTime       @updatedAt
    PlacedShip       PlacedShip[]
    Move             Move[]
+}
+
+enum GameMode {
+   CLASSIC
+   RAMPAGE
 }
 
 enum GameState {

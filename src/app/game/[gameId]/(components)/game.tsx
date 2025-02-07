@@ -99,9 +99,15 @@ export function Game({
             y: coordinates.y,
          });
 
+         if (game.gameMode === "RAMPAGE" && isHit) {
+            setHasPlayed(false);
+            return;
+         }
+
          await updateGame({ gameId: game.id, currentTurn: opponentId! });
       },
       [
+         game.gameMode,
          currentTurn,
          game.id,
          playerId,
