@@ -37,14 +37,17 @@ export function CreateGameForm() {
          destroyers: 1,
       },
    });
-   const { playerId } = usePlayer();
+   const { playerId, hasHydrated } = usePlayer();
    const [isSubmitting, setIsSubmitting] = useState(false);
 
    async function onSubmit(data: CreateGameFormData) {
+      if (!hasHydrated) return;
       setIsSubmitting(true);
       const gameId = await createGame({ ...data, player1Id: playerId });
       router.push(`/game/${gameId}/join`);
    }
+
+   if (!hasHydrated) return null;
 
    if (isSubmitting) {
       return <p>Creating game...</p>;

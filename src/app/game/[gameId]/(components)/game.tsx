@@ -72,7 +72,7 @@ export function Game({
 
    const hitCoordinate = useCallback(
       async (coordinates: Coordinates) => {
-         if (game.currentTurn !== playerId || hasPlayed) return;
+         if (game.currentTurn !== playerId || hasPlayed || !hasHydrated) return;
 
          setHasPlayed(true);
 
@@ -112,6 +112,7 @@ export function Game({
          playShipHitSound,
          playWaterHitSound,
          opponentId,
+         hasHydrated,
       ]
    );
 

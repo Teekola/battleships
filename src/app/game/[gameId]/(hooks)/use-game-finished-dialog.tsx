@@ -61,8 +61,7 @@ export function useGameFinishedDialog(initialGame: Readonly<Game>) {
             isPlayAgain: isPlayAgainState,
          });
       },
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [game.id, isPlayer1, isPlayAgain]
+      [game.id, isPlayer1]
    );
 
    useEffect(() => {
@@ -90,6 +89,23 @@ export function useGameFinishedDialog(initialGame: Readonly<Game>) {
    const isFinished = game.state === GameState.FINISHED;
    const isRestarting = game.state === GameState.SHIP_PLACEMENT;
    const isTie = game.gameEndReason !== "TIE";
+
+   if (!hasHydrated) {
+      return {
+         hasHydrated,
+         game: initialGame,
+         playerId: null,
+         winnerName: null,
+         winnerId: null,
+         opponentName: null,
+         isPlayAgain: false,
+         isOpponentPlayAgain: false,
+         updatePlayAgain: async () => {},
+         isFinished: false,
+         isRestarting: false,
+         isTie: false,
+      };
+   }
 
    return {
       hasHydrated,

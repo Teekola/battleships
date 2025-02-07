@@ -6,7 +6,7 @@ const PLAYER_ID_KEY = "playerId";
 const PLAYER_NAME_KEY = "playerName";
 
 export function usePlayer() {
-   const [playerId, setPlayerId] = useState<string>("");
+   const [playerId, setPlayerId] = useState<string | null>(null);
    const [hasHydrated, setHasHydrated] = useState(false);
    const [playerName, setPlayerName] = useState<string | null>(null);
 
@@ -33,5 +33,9 @@ export function usePlayer() {
       localStorage.setItem(PLAYER_NAME_KEY, name);
    }, []);
 
-   return { playerId, playerName, updatePlayerName, hasHydrated };
+   if (hasHydrated) {
+      return { playerId: playerId as string, playerName, updatePlayerName, hasHydrated };
+   }
+
+   return { playerId: null, playerName, updatePlayerName, hasHydrated };
 }

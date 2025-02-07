@@ -27,10 +27,11 @@ export function PlayerNameForm({
          name: "",
       },
    });
-   const { playerId } = usePlayer();
+   const { playerId, hasHydrated } = usePlayer();
    const { game, error } = useGame(initialGame);
 
    async function onSubmit(data: PlayerNameFormData) {
+      if (!hasHydrated) return;
       if (!game.player1Name) {
          await updateGame({
             gameId,

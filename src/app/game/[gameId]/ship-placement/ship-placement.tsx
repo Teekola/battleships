@@ -100,7 +100,7 @@ export function ShipPlacementView({
    initialOwnShips: PlacedShipDBT[];
 }>) {
    const { game, error } = useGame(initialGame);
-   const { playerId } = usePlayer();
+   const { playerId, hasHydrated } = usePlayer();
 
    const [placedShips, setPlacedShips] = useState<PlacedShip[]>(
       convertPlacedShipsDBTToPlacedShip(initialOwnShips)
@@ -152,6 +152,7 @@ export function ShipPlacementView({
    }
 
    async function clearPlacedShips() {
+      if (!hasHydrated) return;
       setPlacedShips([]);
 
       if (isReady) {
@@ -290,6 +291,7 @@ export function ShipPlacementView({
    const hasPlacedAllShips = checkIfHasPlacedAllShips(shipsToPlace);
 
    async function handleSetReady() {
+      if (!hasHydrated) return;
       if (hasPlacedAllShips && !isReady) {
          updateIsReady(true);
          await placeShips({ placedShips, playerId, gameId: game.id });
