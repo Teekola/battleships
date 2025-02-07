@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { usePlayer } from "@/hooks/use-player";
 import { supabase } from "@/lib/supabase";
 import { Game } from "@/utils/game-db";
 
@@ -13,12 +14,17 @@ export function useGame(initialGame: Readonly<Game>) {
    const winnerId = useGameStore((s) => s.winnerId) ?? initialGame.winnerId;
    const setWinnerId = useGameStore((s) => s.setWinnerId);
    const setCurrentTurn = useGameStore((s) => s.setCurrentTurn);
+   const setOwnTurnsPlayed = useGameStore((s) => s.setOwnTurnsPlayed);
+   const setOpponentTurnsPlayed = useGameStore((s) => s.setOpponentTurnsPlayed);
    const setGame = useGameStore((s) => s.setGame);
    const setHasPlayed = useGameStore((s) => s.setHasPlayed);
+   const { hasHydrated, playerId } = usePlayer();
+   const isPlayer1 = playerId === game.player1Id;
 
    const [error, setError] = useState("");
 
    useEffect(() => {
+      if (!hasHydrated) return;
       const fetchGame = async () => {
          const { data, error } = await supabase
             .from("Game")
@@ -34,6 +40,8 @@ export function useGame(initialGame: Readonly<Game>) {
          const game = { ...data } as Game;
          setGame(game);
          setCurrentTurn(game.currentTurn);
+         setOwnTurnsPlayed(isPlayer1 ? game.player1PlayedTurns : game.player2PlayedTurns);
+         setOpponentTurnsPlayed(isPlayer1 ? game.player2PlayedTurns : game.player1PlayedTurns);
          setError("");
       };
 
@@ -55,6 +63,12 @@ export function useGame(initialGame: Readonly<Game>) {
                   setTimeout(() => {
                      setCurrentTurn(game.currentTurn);
                      setHasPlayed(false);
+                     setOwnTurnsPlayed(
+                        isPlayer1 ? game.player1PlayedTurns : game.player2PlayedTurns
+                     );
+                     setOpponentTurnsPlayed(
+                        isPlayer1 ? game.player2PlayedTurns : game.player1PlayedTurns
+                     );
                   }, 1500);
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
@@ -67,7 +81,17 @@ export function useGame(initialGame: Readonly<Game>) {
       return () => {
          supabase.removeChannel(channel);
       };
-   }, [initialGame.id, setGame, setCurrentTurn, setWinnerId, setHasPlayed]);
+   }, [
+      hasHydrated,
+      isPlayer1,
+      initialGame.id,
+      setGame,
+      setCurrentTurn,
+      setWinnerId,
+      setHasPlayed,
+      setOwnTurnsPlayed,
+      setOpponentTurnsPlayed,
+   ]);
 
    return { game, currentTurn, winnerId, error };
 }

@@ -7,6 +7,8 @@ import { MoveDBT } from "@/utils/move-db";
 export type GameStoreState = {
    game: Game | null;
    currentTurn: string | null;
+   ownTurnsPlayed: number | null;
+   opponentTurnsPlayed: number | null;
    ownMoves: MoveDBT[];
    opponentMoves: MoveDBT[];
    winnerId: string | null;
@@ -16,6 +18,7 @@ export type GameStoreState = {
    ownHitsRemaining?: number;
    opponentHitsRemaining?: number;
    hasPlayed: boolean;
+   lastCheckedTurns: number;
 };
 
 export type GameStoreActions = {
@@ -26,10 +29,15 @@ export type GameStoreActions = {
    setOpponentShipsRemaining: (n: number) => void;
    setOwnHitsRemaining: (n: number) => void;
    setOpponentHitsRemaining: (n: number) => void;
+   setLastCheckedTurns: (n: number) => void;
    setWinnerId: (s: string | null) => void;
    setGameEndReason: (r: GameEndReason) => void;
    setOwnMoves: (moves: MoveDBT[]) => void;
    setOpponentMoves: (moves: MoveDBT[]) => void;
+   incrementOwnTurnsPlayed: () => void;
+   incrementOpponentTurnsPlayed: () => void;
+   setOwnTurnsPlayed: (turns: number) => void;
+   setOpponentTurnsPlayed: (turns: number) => void;
    setHasPlayed: (hasPlayed: boolean) => void;
    addMove: ({
       id,
@@ -62,13 +70,23 @@ export const defaultInitState: GameStoreState = {
    opponentMoves: [],
    hasPlayed: false,
    winnerId: null,
+   ownTurnsPlayed: null,
+   opponentTurnsPlayed: null,
+   lastCheckedTurns: -1,
 };
 
 export function createGameStore(initState: GameStoreState = defaultInitState) {
    return createStore<GameStore>((set, get) => ({
       ...initState,
       reset: () => set(() => ({ ...initState })),
+      incrementOwnTurnsPlayed: () =>
+         set((state) => ({ ...state, ownTurnsPlayed: (state.ownTurnsPlayed ?? 0) + 1 })),
+      incrementOpponentTurnsPlayed: () =>
+         set((state) => ({ ...state, ownTurnsPlayed: (state.opponentTurnsPlayed ?? 0) + 1 })),
       setGame: (g) => set((state) => ({ ...state, game: g })),
+      setOwnTurnsPlayed: (n) => set((state) => ({ ...state, ownTurnsPlayed: n })),
+      setOpponentTurnsPlayed: (n) => set((state) => ({ ...state, opponentTurnsPlayed: n })),
+      setLastCheckedTurns: (n) => set((state) => ({ ...state, lastCheckedTurns: n })),
       setCurrentTurn: (playerId) => set((state) => ({ ...state, currentTurn: playerId })),
       setOwnHitsRemaining: (n) => set((state) => ({ ...state, ownHitsRemaining: n })),
       setOpponentHitsRemaining: (n) => set((state) => ({ ...state, opponentHitsRemaining: n })),

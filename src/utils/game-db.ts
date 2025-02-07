@@ -166,6 +166,8 @@ export class GameDB {
             player2Ready: false,
             player1PlayAgain: false,
             player2PlayAgain: false,
+            player1PlayedTurns: 0,
+            player2PlayedTurns: 0,
          },
       });
    }

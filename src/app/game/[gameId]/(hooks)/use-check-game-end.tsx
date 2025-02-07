@@ -17,13 +17,28 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
    const { playerId, hasHydrated } = usePlayer();
    const isPlayer1 = game.player1Id === playerId;
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
-   const ownTurnsPlayed = isPlayer1 ? game.player1PlayedTurns : game.player2PlayedTurns;
-   const opponentTurnsPlayed = isPlayer1 ? game.player2PlayedTurns : game.player1PlayedTurns;
+
+   const opponentTurnsPlayed =
+      useGameStore((s) => s.opponentTurnsPlayed) ??
+      (isPlayer1 ? game.player2PlayedTurns : game.player1PlayedTurns);
+
+   const ownTurnsPlayed =
+      useGameStore((s) => s.ownTurnsPlayed) ??
+      (isPlayer1 ? game.player1PlayedTurns : game.player2PlayedTurns);
 
    const setGameEndReason = useGameStore((s) => s.setGameEndReason) ?? initialGame.gameEndReason;
    const setWinnerId = useGameStore((s) => s.setWinnerId) ?? initialGame.winnerId;
+
+   const lastCheckedTurns = useGameStore((s) => s.lastCheckedTurns);
+   const setLastCheckedTurns = useGameStore((s) => s.setLastCheckedTurns);
+
    useEffect(() => {
       if (!hasHydrated) return;
+
+      // Only trigger win check if turn count has actually updated
+      if (ownTurnsPlayed + opponentTurnsPlayed <= lastCheckedTurns) {
+         return;
+      }
 
       (async () => {
          const { gameState, gameEndReason, winnerId } = await checkGameEnd({
@@ -31,7 +46,7 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
             opponentHitsRemaining: opponentHitsRemaining ?? 2,
             ownTurnsPlayed,
             opponentTurnsPlayed,
-            gameId: game.id,
+            gameId: initialGame.id,
             opponentId,
             playerId,
          });
@@ -40,12 +55,15 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
             setGameEndReason(gameEndReason);
             setWinnerId(winnerId);
          }
+         setLastCheckedTurns(ownTurnsPlayed + opponentTurnsPlayed);
       })();
    }, [
+      setLastCheckedTurns,
+      lastCheckedTurns,
       hasHydrated,
       ownHitsRemaining,
       opponentHitsRemaining,
-      game,
+      initialGame.id,
       opponentId,
       playerId,
       setGameEndReason,

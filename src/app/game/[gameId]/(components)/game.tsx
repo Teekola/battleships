@@ -2,6 +2,8 @@
 
 import { useCallback, useMemo } from "react";
 
+import { GameMode } from "@prisma/client";
+
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import { Game as GameT } from "@/utils/game-db";
@@ -44,6 +46,7 @@ export function Game({
    const opponentHitsRemaining = useGameStore((s) => s.opponentHitsRemaining);
    const hasPlayed = useGameStore((s) => s.hasPlayed);
    const setHasPlayed = useGameStore((s) => s.setHasPlayed);
+   const incrementOwnTurnsPlayed = useGameStore((s) => s.incrementOwnTurnsPlayed);
    const { playerId, hasHydrated } = usePlayer();
 
    const isPlayer1 = hasHydrated ? game.player1Id === playerId : null;
@@ -98,27 +101,34 @@ export function Game({
             y: coordinates.y,
          });
 
-         if (game.gameMode === "RAMPAGE" && isHit) {
-            setHasPlayed(false);
-            return;
+         if (game.gameMode === GameMode.RAMPAGE && isHit) {
+            const newOwnHitsRemaining = (ownHitsRemaining ?? 2) - 1;
+            if (newOwnHitsRemaining > 0) {
+               setHasPlayed(false);
+               return;
+            }
          }
+
+         incrementOwnTurnsPlayed();
 
          await changeTurn({ gameId: game.id, nextTurn: opponentId!, isPlayer1 });
       },
       [
-         game.gameMode,
+         ownHitsRemaining,
          currentTurn,
-         game.id,
-         isPlayer1,
          playerId,
          hasPlayed,
+         hasHydrated,
+         isPlayer1,
          setHasPlayed,
          addMove,
+         game.id,
+         game.gameMode,
          opponentShipsCoordinates,
          playShipHitSound,
          playWaterHitSound,
+         incrementOwnTurnsPlayed,
          opponentId,
-         hasHydrated,
       ]
    );
 
