@@ -57,7 +57,7 @@ export type GameStore = GameStoreState & GameStoreActions;
 
 export const defaultInitState: GameStoreState = {
    game: null,
-   currentTurn: "",
+   currentTurn: null,
    ownMoves: [],
    opponentMoves: [],
    hasPlayed: false,

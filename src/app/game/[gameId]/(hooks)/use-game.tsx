@@ -33,7 +33,7 @@ export function useGame(initialGame: Readonly<Game>) {
          }
          const game = { ...data } as Game;
          setGame(game);
-         setCurrentTurn(game.currentTurn ?? "");
+         setCurrentTurn(game.currentTurn);
          setError("");
       };
 
@@ -45,9 +45,10 @@ export function useGame(initialGame: Readonly<Game>) {
             "postgres_changes",
             { event: "*", schema: "public", table: "Game", filter: `id=eq.${initialGame.id}` },
             (payload) => {
-               console.log("Game record changed:", payload);
+               console.log(payload.eventType);
 
                if (payload.eventType === "UPDATE") {
+                  console.log("Game record changed:", payload);
                   const game = { ...payload.new } as Game;
                   setGame(game);
                   setWinnerId(game.winnerId);

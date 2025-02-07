@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
@@ -43,17 +43,30 @@ export function Game({
    const opponentShipsRemaining = useGameStore((s) => s.opponentShipsRemaining);
    const ownHitsRemaining = useGameStore((s) => s.ownHitsRemaining);
    const opponentHitsRemaining = useGameStore((s) => s.opponentHitsRemaining);
-   const { playerId, hasHydrated } = usePlayer();
-   const isPlayer1 = game.player1Id === playerId;
-   const ownShips = isPlayer1 ? initialPlayer1PlacedShips : initialPlayer2PlacedShips;
-   const opponentShips = isPlayer1 ? initialPlayer2PlacedShips : initialPlayer1PlacedShips;
-   const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
    const hasPlayed = useGameStore((s) => s.hasPlayed);
    const setHasPlayed = useGameStore((s) => s.setHasPlayed);
+   const { playerId, hasHydrated } = usePlayer();
+
+   const isPlayer1 = hasHydrated ? game.player1Id === playerId : null;
+   const ownShips = useMemo(
+      () => (isPlayer1 ? initialPlayer1PlacedShips : initialPlayer2PlacedShips),
+      [isPlayer1, initialPlayer1PlacedShips, initialPlayer2PlacedShips]
+   );
+   const opponentShips = useMemo(
+      () => (isPlayer1 ? initialPlayer2PlacedShips : initialPlayer1PlacedShips),
+      [isPlayer1, initialPlayer1PlacedShips, initialPlayer2PlacedShips]
+   );
+
+   const opponentId = hasHydrated ? (isPlayer1 ? game.player2Id! : game.player1Id!) : null;
+
    useCheckGameEnd(initialGame);
-   const opponentShipsCoordinates = getAllShipsCoordinates({
-      placedShips: convertPlacedShipsDBTToPlacedShip(opponentShips),
-   });
+   const opponentShipsCoordinates = useMemo(
+      () =>
+         getAllShipsCoordinates({
+            placedShips: convertPlacedShipsDBTToPlacedShip(opponentShips),
+         }),
+      [opponentShips]
+   );
 
    const { playWaterHitSound, playShipHitSound } = useAudio();
 
@@ -86,7 +99,7 @@ export function Game({
             y: coordinates.y,
          });
 
-         await updateGame({ gameId: game.id, currentTurn: opponentId });
+         await updateGame({ gameId: game.id, currentTurn: opponentId! });
       },
       [
          game.currentTurn,
@@ -102,7 +115,7 @@ export function Game({
       ]
    );
 
-   if (!hasHydrated) {
+   if (!hasHydrated || opponentId === null || isPlayer1 === null) {
       return null;
    }
 
