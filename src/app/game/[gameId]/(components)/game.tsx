@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { GameMode } from "@prisma/client";
+import debounce from "lodash.debounce";
 
 import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,9 @@ export function Game({
    const setHasPlayed = useGameStore((s) => s.setHasPlayed);
    const incrementOwnTurnsPlayed = useGameStore((s) => s.incrementOwnTurnsPlayed);
    const { playerId, hasHydrated } = usePlayer();
+   const [stableTurn, setStableTurn] = useState<null | string>(null);
+
+   // Debounced function to set the stable turn after 500ms
 
    const isPlayer1 = hasHydrated ? game.player1Id === playerId : null;
    const ownShips = useMemo(
@@ -62,6 +66,20 @@ export function Game({
    );
 
    const opponentId = hasHydrated ? (isPlayer1 ? game.player2Id! : game.player1Id!) : null;
+
+   const updateStableTurn = useMemo(
+      () =>
+         debounce((newTurn) => {
+            setStableTurn(newTurn);
+         }, 200),
+      []
+   );
+
+   useEffect(() => {
+      if (currentTurn === playerId || currentTurn === opponentId) {
+         updateStableTurn(currentTurn);
+      }
+   }, [currentTurn, playerId, opponentId, updateStableTurn]);
 
    useCheckGameEnd(initialGame);
    const opponentShipsCoordinates = useMemo(
@@ -134,7 +152,7 @@ export function Game({
       ]
    );
 
-   if (!hasHydrated || opponentId === null || isPlayer1 === null || !currentTurn) {
+   if (!hasHydrated || opponentId === null || isPlayer1 === null || !stableTurn) {
       return null;
    }
 
@@ -142,14 +160,14 @@ export function Game({
       <>
          <GameFinishedDialog initialGame={initialGame} />
 
-         <p className={cn(currentTurn === opponentId && "animate-pulse")}>
-            {currentTurn === playerId ? "Your turn!" : "Waiting for opponent to play..."}
+         <p className={cn(stableTurn === opponentId && "animate-pulse")}>
+            {stableTurn === playerId ? "Your turn!" : "Waiting for opponent to play..."}
          </p>
          <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
             <section
                className={cn(
                   "absolute flex w-full flex-col gap-2 opacity-100 transition-opacity duration-500 sm:static",
-                  currentTurn === playerId && "opacity-0 sm:opacity-75"
+                  stableTurn === playerId && "opacity-0 sm:opacity-75"
                )}
             >
                <h2 className="text-lg font-bold">Your Board</h2>
@@ -175,7 +193,7 @@ export function Game({
             <section
                className={cn(
                   "absolute flex w-full flex-col gap-2 opacity-100 transition-opacity duration-500 sm:static",
-                  currentTurn === opponentId && "opacity-0 sm:opacity-75"
+                  stableTurn === opponentId && "opacity-0 sm:opacity-75"
                )}
             >
                <h2 className="text-lg font-bold">Opponent&apos;s Board</h2>
