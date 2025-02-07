@@ -50,11 +50,11 @@ export function useGame(initialGame: Readonly<Game>) {
                if (payload.eventType === "UPDATE") {
                   const game = { ...payload.new } as Game;
                   setGame(game);
+                  setWinnerId(game.winnerId ?? null);
                   setTimeout(() => {
                      setCurrentTurn(game.currentTurn ?? "");
+                     setHasPlayed(false);
                   }, 1500);
-                  setWinnerId(game.winnerId ?? null);
-                  setHasPlayed(false);
                } else if (payload.eventType === "DELETE") {
                   console.error(`Game ${initialGame.id} has been deleted.`);
                   setError(`Game ${initialGame.id} has been deleted.`);
