@@ -31,7 +31,8 @@ export function HitOverlay({ isShip }: { isShip: boolean }) {
             "absolute left-1/2 top-1/2 h-1/4 w-1/4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white",
             isShip && "bg-red-500",
             offsets.x === 0 && "opacity-0",
-            offsets.x !== 0 && "animate-hit"
+            offsets.x !== 0 && "animate-hit",
+            offsets.x !== 0 && isShip && "animate-ship-hit"
          )}
       ></div>
    );

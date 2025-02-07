@@ -82,6 +82,29 @@ export default {
                   top: "50%",
                },
             },
+            "ship-hit": {
+               "0%": {
+                  backgroundColor: "white",
+                  transform: "translate(var(--hit-offset-x),var(--hit-offset-y)) scale(0.5)",
+                  opacity: "0",
+                  left: "0",
+                  top: "0",
+               },
+               "25%": {
+                  backgroundColor: "white",
+                  transform: "translate(-50%,-50%) scale(1)",
+                  opacity: "1",
+                  left: "50%",
+                  top: "50%",
+               },
+               "100%": {
+                  backgroundColor: "red",
+                  transform: "translate(-50%,-50%) scale(1)",
+                  opacity: "1",
+                  left: "50%",
+                  top: "50%",
+               },
+            },
             "sink-ship": {
                "0%": {
                   borderColor: "rgba(55, 65, 81, 1)",
@@ -104,6 +127,7 @@ export default {
             "caret-blink": "caret-blink 1.25s ease-out infinite",
             hit: "hit .15s ease-out forwards",
             "sink-ship": "sink-ship 1s ease-out forwards",
+            "ship-hit": "ship-hit .6s ease-out forwards",
          },
       },
    },
