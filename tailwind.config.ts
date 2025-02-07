@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import tailwindCssAnimate from "tailwindcss-animate";
+import colors from "tailwindcss/colors";
 
 export default {
    darkMode: ["class"],
@@ -98,7 +99,7 @@ export default {
                   top: "50%",
                },
                "100%": {
-                  backgroundColor: "red",
+                  backgroundColor: colors.red[500],
                   transform: "translate(-50%,-50%) scale(1)",
                   opacity: "1",
                   left: "50%",
