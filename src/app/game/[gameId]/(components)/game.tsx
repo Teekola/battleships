@@ -72,7 +72,7 @@ export function Game({
 
    const hitCoordinate = useCallback(
       async (coordinates: Coordinates) => {
-         if (game.currentTurn !== playerId || hasPlayed || !hasHydrated) return;
+         if (currentTurn !== playerId || hasPlayed || !hasHydrated) return;
 
          setHasPlayed(true);
 
@@ -102,7 +102,7 @@ export function Game({
          await updateGame({ gameId: game.id, currentTurn: opponentId! });
       },
       [
-         game.currentTurn,
+         currentTurn,
          game.id,
          playerId,
          hasPlayed,
