@@ -7,12 +7,11 @@ import { GameState } from "@prisma/client";
 import { usePlayer } from "@/hooks/use-player";
 import { Game as GameT } from "@/utils/game-db";
 
-import { useGame } from "../(hooks)/use-game";
 import { useGameStore } from "../(stores)/game-store-provider";
 import { checkGameEnd } from "../(utils)/check-game-end";
 
 export function useCheckGameEnd(initialGame: Readonly<GameT>) {
-   const { game } = useGame(initialGame);
+   const game = useGameStore((s) => s.game) ?? initialGame;
    const ownMoves = useGameStore((s) => s.ownMoves);
    const opponentMoves = useGameStore((s) => s.opponentMoves);
    const ownHitsRemaining = useGameStore((s) => s.ownHitsRemaining);
@@ -21,8 +20,8 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
    const isPlayer1 = game.player1Id === playerId;
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
 
-   const setGameEndReason = useGameStore((s) => s.setGameEndReason);
-   const setWinnerId = useGameStore((s) => s.setWinnerId);
+   const setGameEndReason = useGameStore((s) => s.setGameEndReason) ?? initialGame.gameEndReason;
+   const setWinnerId = useGameStore((s) => s.setWinnerId) ?? initialGame.winnerId;
    useEffect(() => {
       if (!hasHydrated) return;
       (async () => {
@@ -38,8 +37,7 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
 
          if (gameState === GameState.FINISHED) {
             setGameEndReason(gameEndReason);
-            if (winnerId) setWinnerId(winnerId);
-            return;
+            setWinnerId(winnerId);
          }
       })();
    }, [

@@ -1,13 +1,16 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
+
+import { GameState } from "@prisma/client";
 
 import { usePlayer } from "@/hooks/use-player";
 import { Game } from "@/utils/game-db";
 
 import { useGameStore } from "../(stores)/game-store-provider";
 import { restartGame, updateGame } from "../actions";
-import { useGame } from "./use-game";
 
 async function updatePlayerPlayAgain({
    gameId,
@@ -22,8 +25,8 @@ async function updatePlayerPlayAgain({
    return Boolean(isPlayer1 ? result.player1PlayAgain : result.player2PlayAgain);
 }
 
-export function usePlayersPlayAgainState(initialGame: Readonly<Game>) {
-   const { game, error } = useGame(initialGame);
+export function useGameFinishedDialog(initialGame: Readonly<Game>) {
+   const game = useGameStore((s) => s.game) ?? initialGame;
    const { playerId, hasHydrated } = usePlayer();
    const winnerId = useGameStore((s) => s.winnerId) ?? initialGame.winnerId;
    const isPlayer1 = playerId === game.player1Id;
@@ -84,5 +87,22 @@ export function usePlayersPlayAgainState(initialGame: Readonly<Game>) {
       resetStore,
    ]);
 
-   return { error, winnerName, opponentName, isPlayAgain, isOpponentPlayAgain, updatePlayAgain };
+   const isFinished = game.state === GameState.FINISHED;
+   const isRestarting = game.state === GameState.SHIP_PLACEMENT;
+   const isTie = game.gameEndReason !== "TIE";
+
+   return {
+      hasHydrated,
+      game,
+      playerId,
+      winnerName,
+      winnerId,
+      opponentName,
+      isPlayAgain,
+      isOpponentPlayAgain,
+      updatePlayAgain,
+      isFinished,
+      isRestarting,
+      isTie,
+   };
 }

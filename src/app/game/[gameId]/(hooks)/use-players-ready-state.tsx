@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { usePlayer } from "@/hooks/use-player";
 import { Game } from "@/utils/game-db";
 
+import { useGameStore } from "../(stores)/game-store-provider";
 import { startGame } from "../actions";
 import { updateGame } from "../actions";
-import { useGame } from "./use-game";
 
 async function updatePlayerReady({
    gameId,
@@ -23,12 +23,12 @@ async function updatePlayerReady({
 }
 
 export function usePlayersReadyState(initialGame: Readonly<Game>) {
-   const { game, error } = useGame(initialGame);
-
+   const game = useGameStore((s) => s.game) ?? initialGame;
    const { playerId } = usePlayer();
    const isPlayer1 = playerId === game.player1Id;
    const initialIsReady = Boolean(isPlayer1 ? game.player1Ready : game.player2Ready);
    const initialIsOpponentReady = Boolean(isPlayer1 ? game.player2Ready : game.player1Ready);
+   const winnerId = useGameStore((s) => s.winnerId) ?? initialGame.winnerId;
    const router = useRouter();
 
    const [isReady, setIsReady] = useState(initialIsReady);
@@ -65,5 +65,5 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
       })();
    }, [isReady, isOpponentReady, game.id, game.player1Id, game.player2Id, router]);
 
-   return { error, isReady, isOpponentReady, updateIsReady };
+   return { winnerId, isReady, isOpponentReady, updateIsReady };
 }

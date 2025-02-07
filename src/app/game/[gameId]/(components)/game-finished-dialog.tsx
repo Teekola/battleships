@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { GameEndReason, GameState } from "@prisma/client";
+import { GameEndReason } from "@prisma/client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,26 +13,29 @@ import {
    DialogHeader,
    DialogTitle,
 } from "@/components/ui/dialog";
-import { usePlayer } from "@/hooks/use-player";
 import { cn } from "@/lib/utils";
 import { Game } from "@/utils/game-db";
 
-import { useGame } from "../(hooks)/use-game";
-import { usePlayersPlayAgainState } from "../(hooks)/use-players-play-again-state";
+import { useGameFinishedDialog } from "../(hooks)/use-game-finished-dialog";
 
 export function GameFinishedDialog({ initialGame }: { initialGame: Game }) {
-   const { game, winnerId } = useGame(initialGame);
-
-   const { playerId, hasHydrated } = usePlayer();
-   const { isPlayAgain, isOpponentPlayAgain, updatePlayAgain, winnerName, opponentName } =
-      usePlayersPlayAgainState(initialGame);
-
-   const isFinished = game.state === GameState.FINISHED;
-   const isRestarting = game.state === GameState.SHIP_PLACEMENT;
+   const {
+      game,
+      isPlayAgain,
+      isOpponentPlayAgain,
+      updatePlayAgain,
+      playerId,
+      hasHydrated,
+      winnerName,
+      winnerId,
+      opponentName,
+      isFinished,
+      isRestarting,
+      isTie,
+   } = useGameFinishedDialog(initialGame);
 
    if (!hasHydrated) return null;
-
-   if (isFinished && !winnerId && game.gameEndReason !== "TIE") return null;
+   if (isFinished && !winnerId && !isTie) return null;
 
    if (isRestarting) {
       return (
