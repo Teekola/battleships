@@ -44,6 +44,8 @@ export function Game({
    const opponentShipsRemaining = useGameStore((s) => s.opponentShipsRemaining);
    const ownHitsRemaining = useGameStore((s) => s.ownHitsRemaining);
    const opponentHitsRemaining = useGameStore((s) => s.opponentHitsRemaining);
+   const ownTurnsPlayed = useGameStore((s) => s.ownTurnsPlayed);
+   const opponentTurnsPlayed = useGameStore((s) => s.opponentTurnsPlayed);
    const hasPlayed = useGameStore((s) => s.hasPlayed);
    const setHasPlayed = useGameStore((s) => s.setHasPlayed);
    const incrementOwnTurnsPlayed = useGameStore((s) => s.incrementOwnTurnsPlayed);
@@ -132,7 +134,7 @@ export function Game({
       ]
    );
 
-   if (!hasHydrated || opponentId === null || isPlayer1 === null) {
+   if (!hasHydrated || opponentId === null || isPlayer1 === null || !currentTurn) {
       return null;
    }
 
@@ -146,11 +148,11 @@ export function Game({
          <div className="relative grid grid-cols-1 gap-4 sm:grid-cols-2">
             <section
                className={cn(
-                  "absolute w-full opacity-100 transition-opacity duration-500 sm:static",
+                  "absolute flex w-full flex-col gap-2 opacity-100 transition-opacity duration-500 sm:static",
                   currentTurn === playerId && "opacity-0 sm:opacity-75"
                )}
             >
-               <h2 className="mb-1 text-lg font-bold">Your Board</h2>
+               <h2 className="text-lg font-bold">Your Board</h2>
 
                <OwnGameBoard
                   size={game.boardSize}
@@ -158,7 +160,13 @@ export function Game({
                   placedShips={convertPlacedShipsDBTToPlacedShip(ownShips)}
                />
                <p>{ownShipsRemaining} ships remaining</p>
-               {opponentHitsRemaining === 1 &&
+               {game.gameMode === GameMode.RAMPAGE &&
+                  ownHitsRemaining === 0 &&
+                  (opponentTurnsPlayed ?? 0) < (ownTurnsPlayed ?? 0) && (
+                     <p>Opponent can still tie the game if they don&apos;t miss</p>
+                  )}
+               {game.gameMode === GameMode.CLASSIC &&
+                  opponentHitsRemaining === 1 &&
                   ownHitsRemaining === 0 &&
                   opponentMoves.length < ownMoves.length && (
                      <p>Opponent can still tie the game with a hit!</p>
@@ -166,11 +174,11 @@ export function Game({
             </section>
             <section
                className={cn(
-                  "absolute w-full opacity-100 transition-opacity duration-500 sm:static",
+                  "absolute flex w-full flex-col gap-2 opacity-100 transition-opacity duration-500 sm:static",
                   currentTurn === opponentId && "opacity-0 sm:opacity-75"
                )}
             >
-               <h2 className="mb-1 text-lg font-bold">Opponent&apos;s Board</h2>
+               <h2 className="text-lg font-bold">Opponent&apos;s Board</h2>
                <OpponentGameBoard
                   hitCoordinate={hitCoordinate}
                   size={game.boardSize}
@@ -179,7 +187,13 @@ export function Game({
                />
                <p>{opponentShipsRemaining} ships remaining</p>
 
-               {ownHitsRemaining === 1 &&
+               {game.gameMode === GameMode.RAMPAGE &&
+                  opponentHitsRemaining === 0 &&
+                  (opponentTurnsPlayed ?? 0) > (ownTurnsPlayed ?? 0) && (
+                     <p>Hit all your shots to tie the game!</p>
+                  )}
+               {game.gameMode === GameMode.CLASSIC &&
+                  ownHitsRemaining === 1 &&
                   opponentHitsRemaining === 0 &&
                   ownMoves.length < opponentMoves.length && <p>Hit to tie the game!</p>}
             </section>

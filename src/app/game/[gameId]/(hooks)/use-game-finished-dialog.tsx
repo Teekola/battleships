@@ -69,13 +69,21 @@ export function useGameFinishedDialog(initialGame: Readonly<Game>) {
       (async () => {
          if (isPlayAgain && isOpponentPlayAgain && game.player1Id && game.player2Id) {
             resetStore();
-            await restartGame({
-               gameId: game.id,
-            });
-            router.push(`/game/${game.id}/ship-placement`);
+
+            // only update the game once, not from both clients
+            if (isPlayer1) {
+               await restartGame({
+                  gameId: game.id,
+               });
+            }
+
+            setTimeout(() => {
+               router.push(`/game/${game.id}/ship-placement`);
+            }, 300);
          }
       })();
    }, [
+      isPlayer1,
       hasHydrated,
       isPlayAgain,
       isOpponentPlayAgain,
