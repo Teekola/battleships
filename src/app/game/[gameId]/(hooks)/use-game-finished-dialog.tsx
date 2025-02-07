@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -41,7 +41,6 @@ export function useGameFinishedDialog(initialGame: Readonly<Game>) {
 
    const [isPlayAgain, setIsPlayAgain] = useState(initialIsPlayAgain);
    const [isOpponentPlayAgain, setIsOpponentPlayAgain] = useState(initialIsOpponentPlayAgain);
-   const timeout = useRef<NodeJS.Timeout | null>(null);
 
    useEffect(() => {
       if (!hasHydrated) return;
@@ -78,16 +77,9 @@ export function useGameFinishedDialog(initialGame: Readonly<Game>) {
                });
             }
 
-            if (timeout.current) clearTimeout(timeout.current);
-            timeout.current = setTimeout(() => {
-               router.push(`/game/${game.id}/ship-placement`);
-            }, 300);
+            router.push(`/game/${game.id}/ship-placement`);
          }
       })();
-
-      return () => {
-         if (timeout.current) clearTimeout(timeout.current);
-      };
    }, [
       isPlayer1,
       hasHydrated,

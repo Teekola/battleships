@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useRouter } from "next/navigation";
 
@@ -30,7 +30,6 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
    const initialIsOpponentReady = Boolean(isPlayer1 ? game.player2Ready : game.player1Ready);
    const winnerId = useGameStore((s) => s.winnerId) ?? initialGame.winnerId;
    const router = useRouter();
-   const timeout = useRef<NodeJS.Timeout | null>(null);
 
    const [isReady, setIsReady] = useState(initialIsReady);
    const [isOpponentReady, setIsOpponentReady] = useState(initialIsOpponentReady);
@@ -65,15 +64,9 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
             if (isPlayer1) {
                await startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
             }
-            if (timeout.current) clearTimeout(timeout.current);
-            timeout.current = setTimeout(() => {
-               router.push(`/game/${game.id}`);
-            }, 300);
+            router.push(`/game/${game.id}`);
          }
       })();
-      return () => {
-         if (timeout.current) clearTimeout(timeout.current);
-      };
    }, [
       hasHydrated,
       isPlayer1,
