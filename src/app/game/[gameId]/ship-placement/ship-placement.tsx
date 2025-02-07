@@ -144,7 +144,7 @@ export function ShipPlacementView({
    async function removePlacedShip(ship: PlacedShip) {
       const newPlacedShips = placedShips.filter((ps) => ps.shipId !== ship.shipId);
 
-      setPlacedShips(newPlacedShips);
+      setPlacedShips([...newPlacedShips]);
 
       if (isReady) {
          updateIsReady(false);
@@ -216,6 +216,15 @@ export function ShipPlacementView({
          orientation: ShipOrientation;
       };
       const [x, y] = String(e.over.id).split("-").map(Number);
+
+      // Final verification if the ship can be placed!
+      if (
+         (orientation === "horizontal" && x + size > game.boardSize) ||
+         (orientation === "vertical" && y + size > game.boardSize)
+      ) {
+         resetHoveredCells();
+         return;
+      }
 
       placeShip({ shipId: String(e.active.id), size, orientation, coordinates: { x, y } });
    }
