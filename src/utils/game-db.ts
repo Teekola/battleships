@@ -46,6 +46,7 @@ export interface UpdateGameArgs {
    isPlayer1?: boolean;
    playerReady?: boolean;
    playAgain?: boolean;
+   winnerId?: string;
    state?: GameState;
    currentTurn?: string;
    gameEndReason?: GameEndReason;

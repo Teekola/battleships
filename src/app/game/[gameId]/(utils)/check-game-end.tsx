@@ -43,6 +43,7 @@ export async function checkGameEnd({
       await updateGame({
          gameId,
          gameEndReason: GameEndReason.WIN,
+         winnerId: opponentId,
          state: GameState.FINISHED,
       });
       return {
@@ -57,6 +58,7 @@ export async function checkGameEnd({
       await updateGame({
          gameId,
          gameEndReason: GameEndReason.WIN,
+         winnerId: playerId,
          state: GameState.FINISHED,
       });
       return {
@@ -75,6 +77,7 @@ export async function checkGameEnd({
       await updateGame({
          gameId,
          gameEndReason: GameEndReason.WIN,
+         winnerId: playerId,
          state: GameState.FINISHED,
       });
       return {
@@ -93,6 +96,7 @@ export async function checkGameEnd({
       await updateGame({
          gameId,
          gameEndReason: GameEndReason.WIN,
+         winnerId: opponentId,
          state: GameState.FINISHED,
       });
       return {
