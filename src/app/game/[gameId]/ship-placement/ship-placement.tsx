@@ -178,8 +178,7 @@ export function ShipPlacementView({
    }
 
    function handleDragCancel() {
-      resetHoveredCells();
-      setDraggingId(null);
+      handleDragAbort();
    }
 
    function placeShip({
