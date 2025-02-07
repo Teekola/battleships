@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { GameState } from "@prisma/client";
+import { GameMode, GameState } from "@prisma/client";
 
 import { usePlayer } from "@/hooks/use-player";
 import { Game as GameT } from "@/utils/game-db";
@@ -35,8 +35,20 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
    useEffect(() => {
       if (!hasHydrated) return;
 
+      console.log({ ownTurnsPlayed, opponentTurnsPlayed, lastCheckedTurns });
       // Only trigger win check if turn count has actually updated
-      if (ownTurnsPlayed + opponentTurnsPlayed <= lastCheckedTurns) {
+      if (
+         initialGame.gameMode === GameMode.RAMPAGE &&
+         ownTurnsPlayed + opponentTurnsPlayed <= lastCheckedTurns &&
+         (ownHitsRemaining! > 0 || opponentHitsRemaining! > 0)
+      ) {
+         return;
+      }
+      if (
+         initialGame.gameMode === GameMode.CLASSIC &&
+         ownTurnsPlayed + opponentTurnsPlayed <= lastCheckedTurns &&
+         (ownHitsRemaining! > 0 || opponentHitsRemaining! > 0)
+      ) {
          return;
       }
 
@@ -58,6 +70,7 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
          setLastCheckedTurns(ownTurnsPlayed + opponentTurnsPlayed);
       })();
    }, [
+      initialGame.gameMode,
       setLastCheckedTurns,
       lastCheckedTurns,
       hasHydrated,

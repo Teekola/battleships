@@ -19,13 +19,11 @@ export async function checkGameEnd({
    opponentId: string;
    playerId: string;
 }) {
-   if (
-      (ownHitsRemaining > 0 && opponentHitsRemaining > 0) ||
-      opponentTurnsPlayed < 1 ||
-      ownTurnsPlayed < 1
-   ) {
+   if (ownHitsRemaining > 0 && opponentHitsRemaining > 0) {
       return { gameEndReason: null, winnerId: null, gameState: GameState.PLAYING };
    }
+
+   console.log({ ownTurnsPlayed, opponentTurnsPlayed, ownHitsRemaining, opponentHitsRemaining });
 
    const bothHadEqualTurns = ownTurnsPlayed === opponentTurnsPlayed;
 
