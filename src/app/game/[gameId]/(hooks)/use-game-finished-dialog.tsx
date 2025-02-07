@@ -75,9 +75,8 @@ export function useGameFinishedDialog(initialGame: Readonly<Game>) {
                await restartGame({
                   gameId: game.id,
                });
+               router.push(`/game/${game.id}/ship-placement`);
             }
-
-            router.push(`/game/${game.id}/ship-placement`);
          }
       })();
    }, [

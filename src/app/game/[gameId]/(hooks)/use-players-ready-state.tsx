@@ -63,8 +63,8 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
          if (isReady && isOpponentReady && game.player1Id && game.player2Id) {
             if (isPlayer1) {
                await startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
+               router.push(`/game/${game.id}`);
             }
-            router.push(`/game/${game.id}`);
          }
       })();
    }, [

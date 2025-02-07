@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { useRouter } from "next/navigation";
+
+import { GameState } from "@prisma/client";
+
 import { usePlayer } from "@/hooks/use-player";
 import { supabase } from "@/lib/supabase";
 import { Game } from "@/utils/game-db";
@@ -21,6 +25,7 @@ export function useGame(initialGame: Readonly<Game>) {
    const { hasHydrated, playerId } = usePlayer();
    const isPlayer1 = playerId === game.player1Id;
    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+   const router = useRouter();
 
    const [error, setError] = useState("");
 
@@ -38,11 +43,29 @@ export function useGame(initialGame: Readonly<Game>) {
             setError(error.message + " " + error.details);
             return;
          }
-         const game = { ...data } as Game;
-         setGame(game);
-         setCurrentTurn(game.currentTurn);
-         setOwnTurnsPlayed(isPlayer1 ? game.player1PlayedTurns : game.player2PlayedTurns);
-         setOpponentTurnsPlayed(isPlayer1 ? game.player2PlayedTurns : game.player1PlayedTurns);
+         const newGame = { ...data } as Game;
+
+         setGame(newGame);
+         setCurrentTurn(newGame.currentTurn);
+         setOwnTurnsPlayed(isPlayer1 ? newGame.player1PlayedTurns : newGame.player2PlayedTurns);
+         setOpponentTurnsPlayed(
+            isPlayer1 ? newGame.player2PlayedTurns : newGame.player1PlayedTurns
+         );
+
+         if (newGame.player1Ready && newGame.player2Ready && newGame.state !== GameState.PLAYING) {
+            router.push(`/game/${initialGame.id}`);
+            return;
+         }
+
+         if (
+            newGame.player1PlayAgain &&
+            newGame.player2PlayAgain &&
+            newGame.state !== GameState.SHIP_PLACEMENT
+         ) {
+            router.push(`/game/${initialGame.id}/ship-placement`);
+            return;
+         }
+
          setError("");
       };
 
@@ -61,6 +84,25 @@ export function useGame(initialGame: Readonly<Game>) {
                   const newGame = { ...payload.new } as Game;
                   setGame(newGame);
                   setWinnerId(newGame.winnerId);
+
+                  if (
+                     newGame.player1Ready &&
+                     newGame.player2Ready &&
+                     newGame.state !== GameState.PLAYING
+                  ) {
+                     router.push(`/game/${initialGame.id}`);
+                     return;
+                  }
+
+                  if (
+                     newGame.player1PlayAgain &&
+                     newGame.player2PlayAgain &&
+                     newGame.state !== GameState.SHIP_PLACEMENT
+                  ) {
+                     router.push(`/game/${initialGame.id}/ship-placement`);
+                     return;
+                  }
+
                   // Clear the timeout here to prevent old timeout from overwriting a correct value temporarily and causing flicker
                   if (timeoutRef.current) clearTimeout(timeoutRef.current);
                   timeoutRef.current = setTimeout(() => {
@@ -86,6 +128,7 @@ export function useGame(initialGame: Readonly<Game>) {
          if (timeoutRef.current) clearTimeout(timeoutRef.current);
       };
    }, [
+      router,
       hasHydrated,
       isPlayer1,
       initialGame.id,

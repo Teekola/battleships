@@ -179,8 +179,10 @@ export class GameDB {
          data: {
             currentTurn: turn,
             state: GameState.PLAYING,
-            player1Ready: true,
-            player2Ready: true,
+            player1Ready: false,
+            player2Ready: false,
+            player1PlayAgain: false,
+            player2PlayAgain: false,
          },
       });
    }
