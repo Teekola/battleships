@@ -15,8 +15,7 @@ import { useMoves } from "../(hooks)/use-moves";
 import { useGameStore } from "../(stores)/game-store-provider";
 import { getAllShipsCoordinates } from "../(utils)/get-all-ships-coordinates";
 import { Coordinates } from "../(utils)/types";
-import { makeMove } from "../actions";
-import { updateGame } from "../actions";
+import { changeTurn, makeMove } from "../actions";
 import { GameFinishedDialog } from "./game-finished-dialog";
 import { OpponentGameBoard } from "./opponent-game-board";
 import { OwnGameBoard } from "./own-game-board";
@@ -72,7 +71,7 @@ export function Game({
 
    const hitCoordinate = useCallback(
       async (coordinates: Coordinates) => {
-         if (currentTurn !== playerId || hasPlayed || !hasHydrated) return;
+         if (currentTurn !== playerId || hasPlayed || !hasHydrated || isPlayer1 === null) return;
 
          setHasPlayed(true);
 
@@ -104,12 +103,13 @@ export function Game({
             return;
          }
 
-         await updateGame({ gameId: game.id, currentTurn: opponentId! });
+         await changeTurn({ gameId: game.id, nextTurn: opponentId!, isPlayer1 });
       },
       [
          game.gameMode,
          currentTurn,
          game.id,
+         isPlayer1,
          playerId,
          hasPlayed,
          setHasPlayed,

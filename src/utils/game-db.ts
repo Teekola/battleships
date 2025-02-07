@@ -15,6 +15,8 @@ const defaultGameArgs = Prisma.validator<Prisma.GameDefaultArgs>()({
       player2Ready: true,
       player1PlayAgain: true,
       player2PlayAgain: true,
+      player1PlayedTurns: true,
+      player2PlayedTurns: true,
       winnerId: true,
       state: true,
       gameEndReason: true,
@@ -49,6 +51,7 @@ export interface UpdateGameArgs {
    isPlayer1?: boolean;
    playerReady?: boolean;
    playAgain?: boolean;
+   playerPlayedTurns?: number;
    winnerId?: string;
    state?: GameState;
    currentTurn?: string;
@@ -65,6 +68,11 @@ export interface UpdateGameArgs {
 export interface RestartGameArgs {
    gameId: string;
 }
+export interface ChangeTurnArgs {
+   gameId: string;
+   nextTurn: string;
+   isPlayer1: boolean;
+}
 
 export class GameDB {
    constructor() {}
@@ -76,6 +84,8 @@ export class GameDB {
             id,
             ...data,
             state: GameState.WAITING_FOR_PLAYER,
+            player1PlayedTurns: 0,
+            player2PlayedTurns: 0,
          },
       });
       return id;
@@ -122,6 +132,20 @@ export class GameDB {
          select: defaultGameArgs.select,
       });
       return game;
+   }
+
+   async changeTurn({ gameId, isPlayer1, nextTurn }: ChangeTurnArgs) {
+      await prisma.game.update({
+         where: { id: gameId },
+         data: {
+            currentTurn: nextTurn,
+            ...(isPlayer1
+               ? {
+                    player1PlayedTurns: { increment: 1 },
+                 }
+               : { player2PlayedTurns: { increment: 1 } }),
+         },
+      });
    }
 
    async restartGame({ gameId }: RestartGameArgs) {

@@ -12,13 +12,13 @@ import { checkGameEnd } from "../(utils)/check-game-end";
 
 export function useCheckGameEnd(initialGame: Readonly<GameT>) {
    const game = useGameStore((s) => s.game) ?? initialGame;
-   const ownMoves = useGameStore((s) => s.ownMoves);
-   const opponentMoves = useGameStore((s) => s.opponentMoves);
    const ownHitsRemaining = useGameStore((s) => s.ownHitsRemaining);
    const opponentHitsRemaining = useGameStore((s) => s.opponentHitsRemaining);
    const { playerId, hasHydrated } = usePlayer();
    const isPlayer1 = game.player1Id === playerId;
    const opponentId = isPlayer1 ? game.player2Id! : game.player1Id!;
+   const ownTurnsPlayed = isPlayer1 ? game.player1PlayedTurns : game.player2PlayedTurns;
+   const opponentTurnsPlayed = isPlayer1 ? game.player2PlayedTurns : game.player1PlayedTurns;
 
    const setGameEndReason = useGameStore((s) => s.setGameEndReason) ?? initialGame.gameEndReason;
    const setWinnerId = useGameStore((s) => s.setWinnerId) ?? initialGame.winnerId;
@@ -29,11 +29,11 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
          const { gameState, gameEndReason, winnerId } = await checkGameEnd({
             ownHitsRemaining: ownHitsRemaining ?? 2,
             opponentHitsRemaining: opponentHitsRemaining ?? 2,
+            ownTurnsPlayed,
+            opponentTurnsPlayed,
             gameId: game.id,
             opponentId,
             playerId,
-            ownMoves,
-            opponentMoves,
          });
 
          if (gameState === GameState.FINISHED) {
@@ -45,12 +45,12 @@ export function useCheckGameEnd(initialGame: Readonly<GameT>) {
       hasHydrated,
       ownHitsRemaining,
       opponentHitsRemaining,
-      game.id,
+      game,
       opponentId,
       playerId,
-      ownMoves,
-      opponentMoves,
       setGameEndReason,
       setWinnerId,
+      ownTurnsPlayed,
+      opponentTurnsPlayed,
    ]);
 }

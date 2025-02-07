@@ -9,30 +9,32 @@ datasource db {
 }
 
 model Game {
-   id               String         @id
-   gameMode         GameMode
-   player1Id        String?
-   player1Name      String?
-   player1Ready     Boolean?
-   player2Id        String?
-   player2Name      String?
-   player2Ready     Boolean?
-   player1PlayAgain Boolean?
-   player2PlayAgain Boolean?
-   winnerId         String?
-   currentTurn      String?
-   state            GameState
-   gameEndReason    GameEndReason?
-   boardSize        Int
-   carriers         Int
-   battleships      Int
-   cruisers         Int
-   submarines       Int
-   destroyers       Int
-   createdAt        DateTime       @default(now())
-   updatedAt        DateTime       @updatedAt
-   PlacedShip       PlacedShip[]
-   Move             Move[]
+   id                 String         @id
+   gameMode           GameMode
+   player1Id          String?
+   player1Name        String?
+   player1Ready       Boolean?
+   player2Id          String?
+   player2Name        String?
+   player2Ready       Boolean?
+   player1PlayAgain   Boolean?
+   player2PlayAgain   Boolean?
+   player1PlayedTurns Int
+   player2PlayedTurns Int
+   winnerId           String?
+   currentTurn        String?
+   state              GameState
+   gameEndReason      GameEndReason?
+   boardSize          Int
+   carriers           Int
+   battleships        Int
+   cruisers           Int
+   submarines         Int
+   destroyers         Int
+   createdAt          DateTime       @default(now())
+   updatedAt          DateTime       @updatedAt
+   PlacedShip         PlacedShip[]
+   Move               Move[]
 }
 
 enum GameMode {

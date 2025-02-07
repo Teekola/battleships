@@ -1,60 +1,46 @@
 import { GameEndReason, GameState } from "@prisma/client";
 
-import { MoveDBT } from "@/utils/move-db";
-
 import { updateGame } from "../actions";
 
 export async function checkGameEnd({
    gameId,
    ownHitsRemaining,
    opponentHitsRemaining,
+   ownTurnsPlayed,
+   opponentTurnsPlayed,
    opponentId,
    playerId,
-   ownMoves,
-   opponentMoves,
 }: {
    gameId: string;
-   ownHitsRemaining: number;
-   opponentHitsRemaining: number;
+   ownHitsRemaining: number; // How many hits the player needs to win
+   opponentHitsRemaining: number; // How many hits the opponent needs to win
+   ownTurnsPlayed: number;
+   opponentTurnsPlayed: number;
    opponentId: string;
    playerId: string;
-   ownMoves: MoveDBT[];
-   opponentMoves: MoveDBT[];
 }) {
-   if (ownMoves.length < 2 && opponentMoves.length < 2) {
+   if (ownHitsRemaining > 0 && opponentHitsRemaining > 0) {
       return { gameEndReason: null, winnerId: null, gameState: GameState.PLAYING };
    }
-   // Both have moved equal number of turns and both have 0 hits left, it is a tie
-   if (
-      opponentHitsRemaining < 1 &&
-      ownHitsRemaining < 1 &&
-      ownMoves.length === opponentMoves.length
-   ) {
+
+   const bothHadEqualTurns = ownTurnsPlayed === opponentTurnsPlayed;
+
+   // In both Classic and Rampage mode, when both have sunk all ships and played equal number eof turns, it is a TIE
+   if (ownHitsRemaining === 0 && opponentHitsRemaining === 0 && bothHadEqualTurns) {
       await updateGame({
          gameId,
          gameEndReason: GameEndReason.TIE,
          state: GameState.FINISHED,
       });
-      return { gameEndReason: GameEndReason.TIE, winnerId: null, gameState: GameState.FINISHED };
-   }
-
-   // Both have moved equal number of turns and opponent has 0 hits left, opponent wins
-   if (opponentHitsRemaining < 1 && ownMoves.length === opponentMoves.length) {
-      await updateGame({
-         gameId,
-         gameEndReason: GameEndReason.WIN,
-         winnerId: opponentId,
-         state: GameState.FINISHED,
-      });
       return {
-         gameEndReason: GameEndReason.WIN,
-         winnerId: opponentId,
+         gameEndReason: GameEndReason.TIE,
+         winnerId: null,
          gameState: GameState.FINISHED,
       };
    }
 
-   // Both have moved equal number of turns and player has 0 hits left, player wins
-   if (ownHitsRemaining < 1 && ownMoves.length === opponentMoves.length) {
+   // In both modes when own hits required is 0, opponent has hits remaining, and opponent has played equal amount of turns, we have a win
+   if (ownHitsRemaining === 0 && opponentHitsRemaining > 0 && bothHadEqualTurns) {
       await updateGame({
          gameId,
          gameEndReason: GameEndReason.WIN,
@@ -68,31 +54,8 @@ export async function checkGameEnd({
       };
    }
 
-   // Opponent has more than 1 hit remaining and player has 0 so although player has moved more, player wins
-   if (
-      opponentHitsRemaining > 1 &&
-      ownHitsRemaining < 1 &&
-      ownMoves.length > opponentMoves.length
-   ) {
-      await updateGame({
-         gameId,
-         gameEndReason: GameEndReason.WIN,
-         winnerId: playerId,
-         state: GameState.FINISHED,
-      });
-      return {
-         gameEndReason: GameEndReason.WIN,
-         winnerId: playerId,
-         gameState: GameState.FINISHED,
-      };
-   }
-
-   // Player has more than 1 hit remaining and opponent has 0 so although player has moved less, opponent opponent wins
-   if (
-      ownHitsRemaining > 1 &&
-      opponentHitsRemaining < 1 &&
-      ownMoves.length < opponentMoves.length
-   ) {
+   // In both modes when opponent hits required is 0, player has hits remaining, and player has played equal amount of turns, we have a win
+   if (opponentHitsRemaining === 0 && ownHitsRemaining > 0 && bothHadEqualTurns) {
       await updateGame({
          gameId,
          gameEndReason: GameEndReason.WIN,

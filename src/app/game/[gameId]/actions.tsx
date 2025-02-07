@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/utils/db";
-import { RestartGameArgs, UpdateGameArgs } from "@/utils/game-db";
+import { ChangeTurnArgs, RestartGameArgs, UpdateGameArgs } from "@/utils/game-db";
 import { CreateMoveArgs } from "@/utils/move-db";
 import { GetShipsArgs, PlaceShipsArgs, RemoveShipsArgs } from "@/utils/placed-ship-db";
 
@@ -31,5 +31,10 @@ export async function makeMove(data: CreateMoveArgs) {
 
 export async function updateGame(data: UpdateGameArgs) {
    const game = await db.game.update(data);
+   return game;
+}
+
+export async function changeTurn(data: ChangeTurnArgs) {
+   const game = await db.game.changeTurn(data);
    return game;
 }
