@@ -110,16 +110,6 @@ export function ShipPlacementView({
    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
    const [draggingId, setDraggingId] = useState<string | null>(null);
 
-   const shipsToPlaceForGame = {
-      carrier: game.carriers,
-      battleship: game.battleships,
-      cruiser: game.cruisers,
-      submarine: game.submarines,
-      destroyer: game.destroyers,
-   };
-
-   const initialShipsToPlace = adjustShipsToPlace(placedShips, shipsToPlaceForGame);
-
    const [hoveredCells, setHoveredCells] = useState<HoveredCells>({
       canPlace: false,
       coordinates: [],
@@ -129,7 +119,18 @@ export function ShipPlacementView({
       [placedShips]
    );
 
-   const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(initialShipsToPlace);
+   const shipsToPlace = useMemo(
+      () =>
+         adjustShipsToPlace(placedShips, {
+            carrier: game.carriers,
+            battleship: game.battleships,
+            cruiser: game.cruisers,
+            submarine: game.submarines,
+            destroyer: game.destroyers,
+         }),
+      [game, placedShips]
+   );
+
    const { orientation, setOrientation, toggleOrientation } = useOrientation();
    const [message, setMessage] = useState("");
    const resetHoveredCells = useCallback(() => {
@@ -142,11 +143,7 @@ export function ShipPlacementView({
 
    async function removePlacedShip(ship: PlacedShip) {
       const newPlacedShips = placedShips.filter((ps) => ps.shipId !== ship.shipId);
-      const newShipsToPlace = {
-         ...shipsToPlace,
-         [ship.shipType]: shipsToPlace[ship.shipType] + 1,
-      };
-      setShipsToPlace(newShipsToPlace);
+
       setPlacedShips(newPlacedShips);
 
       if (isReady) {
@@ -156,7 +153,7 @@ export function ShipPlacementView({
 
    async function clearPlacedShips() {
       setPlacedShips([]);
-      setShipsToPlace(shipsToPlaceForGame);
+
       if (isReady) {
          updateIsReady(false);
       }
@@ -197,7 +194,6 @@ export function ShipPlacementView({
       ]);
       setPlacedShips(newPlacedShips);
       const newShipsToPlace = { ...shipsToPlace, [shipType]: shipsToPlace[shipType] - 1 };
-      setShipsToPlace(newShipsToPlace);
       resetHoveredCells();
 
       const hasPlacedAllShips = checkIfHasPlacedAllShips(newShipsToPlace);
