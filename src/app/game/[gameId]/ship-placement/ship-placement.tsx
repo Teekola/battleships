@@ -124,7 +124,11 @@ export function ShipPlacementView({
       canPlace: false,
       coordinates: [],
    });
-   const [allShipsCoordinates, setAllShipsCoordinates] = useState(new Set<string>());
+   const allShipsCoordinates = useMemo(
+      () => getAllShipsCoordinates({ placedShips }),
+      [placedShips]
+   );
+
    const [shipsToPlace, setShipsToPlace] = useState<ShipAmounts>(initialShipsToPlace);
    const { orientation, setOrientation, toggleOrientation } = useOrientation();
    const [message, setMessage] = useState("");
@@ -144,7 +148,7 @@ export function ShipPlacementView({
       };
       setShipsToPlace(newShipsToPlace);
       setPlacedShips(newPlacedShips);
-      setAllShipsCoordinates(getAllShipsCoordinates({ placedShips: newPlacedShips }));
+
       if (isReady) {
          updateIsReady(false);
       }
@@ -153,7 +157,6 @@ export function ShipPlacementView({
    async function clearPlacedShips() {
       setPlacedShips([]);
       setShipsToPlace(shipsToPlaceForGame);
-      setAllShipsCoordinates(new Set());
       if (isReady) {
          updateIsReady(false);
       }
@@ -193,7 +196,6 @@ export function ShipPlacementView({
          { coordinates, size, orientation, shipId, shipType },
       ]);
       setPlacedShips(newPlacedShips);
-      setAllShipsCoordinates(getAllShipsCoordinates({ placedShips: newPlacedShips }));
       const newShipsToPlace = { ...shipsToPlace, [shipType]: shipsToPlace[shipType] - 1 };
       setShipsToPlace(newShipsToPlace);
       resetHoveredCells();
