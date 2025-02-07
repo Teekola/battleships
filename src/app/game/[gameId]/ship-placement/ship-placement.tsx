@@ -172,13 +172,9 @@ export function ShipPlacementView({
       }
    }
 
-   function handleDragAbort() {
+   function handleDragAbortOrDragCancel() {
       resetHoveredCells();
       setDraggingId(null);
-   }
-
-   function handleDragCancel() {
-      handleDragAbort();
    }
 
    function placeShip({
@@ -325,8 +321,8 @@ export function ShipPlacementView({
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
             onDragMove={handleDragMove}
-            onDragAbort={handleDragAbort}
-            onDragCancel={handleDragCancel}
+            onDragAbort={handleDragAbortOrDragCancel}
+            onDragCancel={handleDragAbortOrDragCancel}
             modifiers={[snapCenterToCursor]}
          >
             <div className="grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-[minmax(0,_3fr),minmax(0,_2fr)]">
