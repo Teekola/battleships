@@ -1,5 +1,7 @@
 "use server";
 
+import { GameState } from "@prisma/client";
+
 import { db } from "@/utils/db";
 import { ChangeTurnArgs, RestartGameArgs, UpdateGameArgs } from "@/utils/game-db";
 import { CreateMoveArgs } from "@/utils/move-db";
@@ -14,10 +16,16 @@ export async function removePlayersShips(data: RemoveShipsArgs) {
 }
 
 export async function startGame(data: { gameId: string; playerIds: string[] }) {
+   const game = await db.game.getById(data.gameId);
+   if (!game) throw new Error("The game does not exist.");
+   if (game.state === GameState.PLAYING) return;
    await db.game.startGame(data);
 }
 
 export async function restartGame(data: RestartGameArgs) {
+   const game = await db.game.getById(data.gameId);
+   if (!game) throw new Error("The game does not exist.");
+   if (game.state === GameState.SHIP_PLACEMENT) return;
    await db.game.restartGame(data);
 }
 

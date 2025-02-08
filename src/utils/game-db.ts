@@ -164,8 +164,6 @@ export class GameDB {
             gameEndReason: null,
             player1Ready: false,
             player2Ready: false,
-            player1PlayAgain: false,
-            player2PlayAgain: false,
             player1PlayedTurns: 0,
             player2PlayedTurns: 0,
          },
@@ -179,8 +177,6 @@ export class GameDB {
          data: {
             currentTurn: turn,
             state: GameState.PLAYING,
-            player1Ready: false,
-            player2Ready: false,
             player1PlayAgain: false,
             player2PlayAgain: false,
          },

@@ -61,22 +61,11 @@ export function usePlayersReadyState(initialGame: Readonly<Game>) {
 
       (async () => {
          if (isReady && isOpponentReady && game.player1Id && game.player2Id) {
-            if (isPlayer1) {
-               await startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
-               router.push(`/game/${game.id}`);
-            }
+            await startGame({ gameId: game.id, playerIds: [game.player1Id, game.player2Id] });
+            router.push(`/game/${game.id}`);
          }
       })();
-   }, [
-      hasHydrated,
-      isPlayer1,
-      isReady,
-      isOpponentReady,
-      game.id,
-      game.player1Id,
-      game.player2Id,
-      router,
-   ]);
+   }, [hasHydrated, isReady, isOpponentReady, game.id, game.player1Id, game.player2Id, router]);
 
    return { winnerId, isReady, isOpponentReady, updateIsReady };
 }
