@@ -74,6 +74,7 @@ This is an implementation of the classic Battleships game as an online multiplay
 - **Supabase subscriptions** enable real-time updates.
 - **Zustand** is used for efficient state management.
 - **Next.js App Router** is used to structure views and handle navigation.
+![kuva](https://github.com/user-attachments/assets/084ce381-0dbb-4e50-b089-706ae120bfbd)
 
 ---
 
